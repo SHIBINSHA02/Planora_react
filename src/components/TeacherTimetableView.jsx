@@ -1,3 +1,4 @@
+// src/components/TeacherTimetableView.jsx
 // components/TeacherTimetableView.jsx
 import React from 'react';
 import ScheduleTable from './ScheduleTable';
