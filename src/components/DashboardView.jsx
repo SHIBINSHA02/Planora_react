@@ -1,3 +1,4 @@
+// src/components/DashboardView.jsx
 import { Plus, User, BookOpen, MapPin, Calendar, Download, RotateCcw } from 'lucide-react';
 import StatsCard from './StatsCard';
 import TeacherForm from './TeacherForm';
