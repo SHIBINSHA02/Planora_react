@@ -1,4 +1,4 @@
-// src/App.jsx
+// src/App.jsxwsl
 import './App.css'
 import TeacherScheduleSystem from './TeacherScheduleSystem'
 

@@ -1,3 +1,4 @@
+// src/components/ClassroomScheduleView.jsx
 // components/ClassroomScheduleView.jsx
 import React from 'react';
 import ScheduleTable from './ScheduleTable';
