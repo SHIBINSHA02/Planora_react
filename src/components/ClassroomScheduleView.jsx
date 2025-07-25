@@ -31,21 +31,9 @@ const ClassroomScheduleView = ({
     return isTeacherAvailable(parseInt(teacherId), dayIndex, periodIndex, parseInt(selectedClassroom));
   };
 
-  // Enhanced update schedule with validation
+  // Enhanced update schedule - no validation needed since dropdown is filtered
   const handleUpdateSchedule = (dayIndex, periodIndex, teacherId, subject) => {
-    // If clearing the assignment (empty teacherId), allow it
-    if (!teacherId) {
-      updateSchedule(parseInt(selectedClassroom), dayIndex, periodIndex, teacherId, subject);
-      return;
-    }
-
-    // Validate teacher availability
-    if (validateTeacherAssignment(dayIndex, periodIndex, teacherId)) {
-      updateSchedule(parseInt(selectedClassroom), dayIndex, periodIndex, teacherId, subject);
-    } else {
-      // Show alert or handle conflict
-      alert('This teacher is already assigned to another class at this time slot!');
-    }
+    updateSchedule(parseInt(selectedClassroom), dayIndex, periodIndex, teacherId, subject);
   };
 
   return (
@@ -89,7 +77,6 @@ const ClassroomScheduleView = ({
             subjects={subjects}
             onUpdateSchedule={handleUpdateSchedule}
             getTeachersForTimeSlot={getTeachersForTimeSlot}
-            validateTeacherAssignment={validateTeacherAssignment}
             type="classroom"
           />
         </div>
