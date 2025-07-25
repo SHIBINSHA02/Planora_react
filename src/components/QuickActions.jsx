@@ -1,3 +1,4 @@
+// src/components/QuickActions.jsx
 // components/QuickActions.jsx
 import React from 'react';
 import { Calendar, Download, RotateCcw } from 'lucide-react';

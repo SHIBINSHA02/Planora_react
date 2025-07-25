@@ -75,6 +75,28 @@ export const useScheduleData = () => {
     return false;
   };
 
+  // Get available teachers for a specific day and period (excluding current classroom)
+  const getAvailableTeachers = (dayIndex, periodIndex, currentClassroomId = null) => {
+    return teachers.filter(teacher => {
+      // Check if teacher is already assigned at this day/period in any classroom
+      for (const classroomId of Object.keys(schedules)) {
+        // Skip the current classroom if we're editing an existing assignment
+        if (currentClassroomId && parseInt(classroomId) === currentClassroomId) {
+          continue;
+        }
+        
+        const classroomSchedule = schedules[classroomId];
+        if (classroomSchedule[dayIndex] && classroomSchedule[dayIndex][periodIndex]) {
+          const period = classroomSchedule[dayIndex][periodIndex];
+          if (period.teacherId === teacher.id) {
+            return false; // Teacher is already assigned elsewhere
+          }
+        }
+      }
+      return true; // Teacher is available
+    });
+  };
+
   // Update schedule assignment
   const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) => {
     const teacher = teachers.find(t => t.id === parseInt(teacherId));
@@ -123,27 +145,61 @@ export const useScheduleData = () => {
     return timetable;
   };
 
-  // Auto-assign teachers (basic algorithm)
+  // Check if a teacher is available at a specific time slot
+  const isTeacherAvailable = (teacherId, dayIndex, periodIndex, excludeClassroomId = null) => {
+    for (const classroomId of Object.keys(schedules)) {
+      if (excludeClassroomId && parseInt(classroomId) === excludeClassroomId) {
+        continue;
+      }
+      
+      const classroomSchedule = schedules[classroomId];
+      if (classroomSchedule[dayIndex] && classroomSchedule[dayIndex][periodIndex]) {
+        const period = classroomSchedule[dayIndex][periodIndex];
+        if (period.teacherId === teacherId) {
+          return false;
+        }
+      }
+    }
+    return true;
+  };
+
+  // Auto-assign teachers (improved algorithm with conflict checking)
   const autoAssignTeachers = () => {
     const newSchedules = { ...schedules };
     
     classrooms.forEach(classroom => {
       const schedule = newSchedules[classroom.id];
       
-      // Simple distribution algorithm
-      let teacherIndex = 0;
       schedule.forEach((day, dayIndex) => {
         day.forEach((period, periodIndex) => {
           if (!period.teacherId) {
-            const teacher = teachers[teacherIndex % teachers.length];
-            const subject = teacher.subjects[Math.floor(Math.random() * teacher.subjects.length)];
+            // Find available teachers for this time slot
+            const availableTeachers = teachers.filter(teacher => {
+              // Check if teacher is available at this time across all classrooms
+              for (const otherClassroomId of Object.keys(newSchedules)) {
+                if (parseInt(otherClassroomId) === classroom.id) continue;
+                
+                const otherSchedule = newSchedules[otherClassroomId];
+                if (otherSchedule[dayIndex] && otherSchedule[dayIndex][periodIndex]) {
+                  const otherPeriod = otherSchedule[dayIndex][periodIndex];
+                  if (otherPeriod.teacherId === teacher.id) {
+                    return false;
+                  }
+                }
+              }
+              return true;
+            });
             
-            schedule[dayIndex][periodIndex] = {
-              teacher: teacher.name,
-              subject: subject,
-              teacherId: teacher.id
-            };
-            teacherIndex++;
+            if (availableTeachers.length > 0) {
+              const teacher = availableTeachers[Math.floor(Math.random() * availableTeachers.length)];
+              const subject = teacher.subjects[Math.floor(Math.random() * teacher.subjects.length)];
+              
+              schedule[dayIndex][periodIndex] = {
+                teacher: teacher.name,
+                subject: subject,
+                teacherId: teacher.id
+              };
+            }
           }
         });
       });
@@ -181,6 +237,8 @@ export const useScheduleData = () => {
     updateSchedule,
     clearAllSchedules,
     getTeacherTimetable,
+    getAvailableTeachers,
+    isTeacherAvailable,
     autoAssignTeachers,
     exportData
   };

@@ -1,12 +1,10 @@
 // src/TeacherScheduleSystem.jsx
-// TeacherScheduleSystem.jsx
 import React, { useState } from 'react';
 import Header from './components/Header';
 import DashboardView from './components/DashboardView';
 import ClassroomScheduleView from './components/ClassroomScheduleView';
 import TeacherTimetableView from './components/TeacherTimetableView';
 import { useScheduleData } from './components/hooks/useScheduleData';
-
 
 const TeacherScheduleSystem = () => {
   const [currentView, setCurrentView] = useState('dashboard');
@@ -23,6 +21,8 @@ const TeacherScheduleSystem = () => {
     updateSchedule,
     clearAllSchedules,
     getTeacherTimetable,
+    getAvailableTeachers,
+    isTeacherAvailable,
     autoAssignTeachers,
     exportData
   } = useScheduleData();
@@ -57,6 +57,8 @@ const TeacherScheduleSystem = () => {
             selectedClassroom={selectedClassroom}
             setSelectedClassroom={setSelectedClassroom}
             updateSchedule={updateSchedule}
+            getAvailableTeachers={getAvailableTeachers}
+            isTeacherAvailable={isTeacherAvailable}
           />
         )}
         
