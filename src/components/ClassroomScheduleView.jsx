@@ -1,72 +1,223 @@
 // src/components/ClassroomScheduleView.jsx
-// components/ClassroomScheduleView.jsx
 import React from 'react';
+import PropTypes from 'prop-types';
 import ScheduleTable from './ScheduleTable';
 
 const ClassroomScheduleView = ({
   classrooms,
   teachers,
-  subjects,
   schedules,
   selectedClassroom,
   setSelectedClassroom,
   updateSchedule,
   getAvailableTeachers,
+  getTeachersForSubject,
+  getSubjectsForClass,
   isTeacherAvailable
 }) => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const periods = ['Period 1', 'Period 2', 'Period 3', 'Period 4', 'Period 5', 'Period 6'];
 
-  // Function to get available teachers for a specific time slot
-  const getTeachersForTimeSlot = (dayIndex, periodIndex) => {
-    if (!selectedClassroom) return teachers;
+  // Get current classroom details
+  const getCurrentClassroom = () => {
+    if (!selectedClassroom) return null;
+    return classrooms.find(c => c.id === parseInt(selectedClassroom));
+  };
+
+  // Get subjects available for the selected classroom
+  const getAvailableSubjects = () => {
+    const classroom = getCurrentClassroom();
+    if (!classroom) return [];
+    return getSubjectsForClass(classroom.grade);
+  };
+
+  // Function to get available teachers for a specific time slot and classroom
+  const getTeachersForTimeSlot = (dayIndex, periodIndex, selectedSubject = null) => {
+    if (!selectedClassroom) return [];
     
-    return getAvailableTeachers(dayIndex, periodIndex, parseInt(selectedClassroom));
+    return getAvailableTeachers(
+      parseInt(selectedClassroom), 
+      dayIndex, 
+      periodIndex, 
+      selectedSubject
+    );
+  };
+
+  // Function to get teachers who can teach a specific subject to current classroom
+  const getTeachersForCurrentClassSubject = (subject) => {
+    const classroom = getCurrentClassroom();
+    if (!classroom) return [];
+    
+    return getTeachersForSubject(classroom.grade, subject);
   };
 
   // Function to validate teacher assignment
-  const validateTeacherAssignment = (dayIndex, periodIndex, teacherId) => {
+  const validateTeacherAssignment = (dayIndex, periodIndex, teacherId, subject) => {
     if (!selectedClassroom || !teacherId) return true;
     
+    const classroom = getCurrentClassroom();
+    const teacher = teachers.find(t => t.id === parseInt(teacherId));
+    
+    if (!teacher || !classroom) return false;
+    
+    // Check if teacher can teach this subject
+    if (subject && !teacher.subjects.includes(subject)) return false;
+    
+    // Check if teacher can teach this class
+    if (!teacher.classes.includes(classroom.grade)) return false;
+    
+    // Check if teacher is available at this time
     return isTeacherAvailable(parseInt(teacherId), dayIndex, periodIndex, parseInt(selectedClassroom));
   };
 
-  // Enhanced update schedule - no validation needed since dropdown is filtered
+  // Enhanced update schedule with validation
   const handleUpdateSchedule = (dayIndex, periodIndex, teacherId, subject) => {
-    updateSchedule(parseInt(selectedClassroom), dayIndex, periodIndex, teacherId, subject);
+    const classroom = getCurrentClassroom();
+    
+    if (!classroom) {
+      console.error('No classroom selected');
+      return false;
+    }
+
+    // Validate the assignment
+    if (!validateTeacherAssignment(dayIndex, periodIndex, teacherId, subject)) {
+      console.warn('Invalid teacher assignment');
+      return false;
+    }
+
+    // Check if subject is valid for this class
+    const validSubjects = getSubjectsForClass(classroom.grade);
+    if (subject && !validSubjects.includes(subject)) {
+      console.warn(`Subject ${subject} is not valid for class ${classroom.grade}`);
+      return false;
+    }
+
+    return updateSchedule(parseInt(selectedClassroom), dayIndex, periodIndex, teacherId, subject);
   };
+
+  // Get classroom statistics
+  const getClassroomStats = () => {
+    const classroom = getCurrentClassroom();
+    if (!classroom || !schedules[selectedClassroom]) return null;
+
+    const schedule = schedules[selectedClassroom];
+    let totalSlots = 0;
+    let filledSlots = 0;
+    let subjectCount = {};
+    let teacherCount = {};
+
+    schedule.forEach(day => {
+      day.forEach(period => {
+        totalSlots++;
+        if (period.teacherId) {
+          filledSlots++;
+          subjectCount[period.subject] = (subjectCount[period.subject] || 0) + 1;
+          teacherCount[period.teacher] = (teacherCount[period.teacher] || 0) + 1;
+        }
+      });
+    });
+
+    return {
+      totalSlots,
+      filledSlots,
+      completionPercentage: Math.round((filledSlots / totalSlots) * 100),
+      subjectCount,
+      teacherCount
+    };
+  };
+
+  const currentClassroom = getCurrentClassroom();
+  const availableSubjects = getAvailableSubjects();
+  const stats = getClassroomStats();
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-4 mb-6">
-        <select
-          value={selectedClassroom}
-          onChange={(e) => setSelectedClassroom(e.target.value)}
-          className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-        >
-          <option value="">Select Classroom</option>
-          {classrooms.map(classroom => (
-            <option key={classroom.id} value={classroom.id}>
-              {classroom.name} ({classroom.grade})
-            </option>
-          ))}
-        </select>
-        
-        {selectedClassroom && (
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center space-x-4">
+          <select
+            value={selectedClassroom}
+            onChange={(e) => setSelectedClassroom(e.target.value)}
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          >
+            <option value="">Select Classroom</option>
+            {classrooms.map(classroom => (
+              <option key={classroom.id} value={classroom.id}>
+                {classroom.name} ({classroom.grade})
+              </option>
+            ))}
+          </select>
+          
+          {currentClassroom && (
+            <div className="text-sm text-gray-600">
+              <span className="font-medium">{currentClassroom.name}</span>
+              <span className="mx-2">•</span>
+              <span>Grade: {currentClassroom.grade}</span>
+              <span className="mx-2">•</span>
+              <span>Division: {currentClassroom.division}</span>
+            </div>
+          )}
+        </div>
+
+        {stats && (
           <div className="text-sm text-gray-600">
-            Showing schedule for {classrooms.find(c => c.id === parseInt(selectedClassroom))?.name}
+            Schedule Completion: 
+            <span className={`ml-1 font-medium ${
+              stats.completionPercentage >= 80 ? 'text-green-600' : 
+              stats.completionPercentage >= 50 ? 'text-yellow-600' : 'text-red-600'
+            }`}>
+              {stats.completionPercentage}%
+            </span>
+            <span className="ml-1">({stats.filledSlots}/{stats.totalSlots})</span>
           </div>
         )}
       </div>
 
       {selectedClassroom && schedules[selectedClassroom] && (
         <div className="space-y-4">
-          {/* Legend/Info */}
-          <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-blue-800 mb-2">Schedule Information</h3>
-            <p className="text-xs text-blue-600">
-              Only available teachers are shown in the dropdown for each time slot to prevent scheduling conflicts.
-            </p>
+          {/* Class Information */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Subjects Info */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-blue-800 mb-2">
+                Subjects for {currentClassroom?.grade}
+              </h3>
+              <div className="flex flex-wrap gap-1">
+                {availableSubjects.map(subject => (
+                  <span 
+                    key={subject}
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                  >
+                    {subject}
+                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Teachers Info */}
+            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-green-800 mb-2">
+                Available Teachers
+              </h3>
+              <div className="text-xs text-green-600">
+                {teachers.filter(t => t.classes.includes(currentClassroom?.grade)).length} teachers 
+                can teach this class
+              </div>
+              {stats && Object.keys(stats.teacherCount).length > 0 && (
+                <div className="mt-2 text-xs text-green-700">
+                  Currently assigned: {Object.keys(stats.teacherCount).join(', ')}
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Schedule Instructions */}
+          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-amber-800 mb-2">Scheduling Rules</h3>
+            <ul className="text-xs text-amber-700 space-y-1">
+              <li>• Only teachers qualified for this class and subject are shown</li>
+              <li>• Teachers cannot be assigned to multiple classes at the same time</li>
+              <li>• Subjects are limited to the curriculum for {currentClassroom?.grade}</li>
+            </ul>
           </div>
 
           <ScheduleTable
@@ -74,11 +225,52 @@ const ClassroomScheduleView = ({
             days={days}
             periods={periods}
             teachers={teachers}
-            subjects={subjects}
+            subjects={availableSubjects} // Pass class-specific subjects
             onUpdateSchedule={handleUpdateSchedule}
             getTeachersForTimeSlot={getTeachersForTimeSlot}
+            getTeachersForSubject={getTeachersForCurrentClassSubject}
+            validateAssignment={validateTeacherAssignment}
             type="classroom"
+            classroomGrade={currentClassroom?.grade}
           />
+
+          {/* Schedule Statistics */}
+          {stats && (
+            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-800 mb-3">Schedule Statistics</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Subject Distribution */}
+                {Object.keys(stats.subjectCount).length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-700 mb-2">Subject Distribution</h4>
+                    <div className="space-y-1">
+                      {Object.entries(stats.subjectCount).map(([subject, count]) => (
+                        <div key={subject} className="flex justify-between text-xs">
+                          <span className="text-gray-600">{subject}</span>
+                          <span className="font-medium">{count} periods</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Teacher Workload */}
+                {Object.keys(stats.teacherCount).length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-medium text-gray-700 mb-2">Teacher Workload</h4>
+                    <div className="space-y-1">
+                      {Object.entries(stats.teacherCount).map(([teacher, count]) => (
+                        <div key={teacher} className="flex justify-between text-xs">
+                          <span className="text-gray-600">{teacher}</span>
+                          <span className="font-medium">{count} periods</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
         </div>
       )}
 
@@ -96,11 +288,27 @@ const ClassroomScheduleView = ({
             <p className="text-sm">
               Choose a classroom from the dropdown above to view and edit its schedule.
             </p>
+            <p className="text-xs mt-2 text-gray-400">
+              Each classroom has specific subjects and qualified teachers based on the grade level.
+            </p>
           </div>
         </div>
       )}
     </div>
   );
+};
+
+ClassroomScheduleView.propTypes = {
+  classrooms: PropTypes.array.isRequired,
+  teachers: PropTypes.array.isRequired,
+  schedules: PropTypes.object.isRequired,
+  selectedClassroom: PropTypes.string.isRequired,
+  setSelectedClassroom: PropTypes.func.isRequired,
+  updateSchedule: PropTypes.func.isRequired,
+  getAvailableTeachers: PropTypes.func.isRequired,
+  getTeachersForSubject: PropTypes.func.isRequired,
+  getSubjectsForClass: PropTypes.func.isRequired,
+  isTeacherAvailable: PropTypes.func.isRequired,
 };
 
 export default ClassroomScheduleView;

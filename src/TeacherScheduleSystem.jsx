@@ -4,6 +4,7 @@ import Header from './components/Header';
 import DashboardView from './components/DashboardView';
 import ClassroomScheduleView from './components/ClassroomScheduleView';
 import TeacherTimetableView from './components/TeacherTimetableView';
+import ErrorBoundary from './components/ErrorBoundary';
 import { useScheduleData } from './components/hooks/useScheduleData';
 
 const TeacherScheduleSystem = () => {
@@ -14,7 +15,7 @@ const TeacherScheduleSystem = () => {
   const {
     teachers,
     classrooms,
-    subjects,
+    classSubjects,
     schedules,
     addTeacher,
     addClassroom,
@@ -22,10 +23,19 @@ const TeacherScheduleSystem = () => {
     clearAllSchedules,
     getTeacherTimetable,
     getAvailableTeachers,
+    getSubjectsForClass, // Add this
+    getTeachersForSubject, // Add this
     isTeacherAvailable,
     autoAssignTeachers,
     exportData
   } = useScheduleData();
+
+  // Convert classSubjects object to an array of unique subjects
+  const subjects = Array.from(
+    new Set(
+      Object.values(classSubjects).flat()
+    )
+  );
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -36,39 +46,47 @@ const TeacherScheduleSystem = () => {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {currentView === 'dashboard' && (
-          <DashboardView 
-            teachers={teachers}
-            classrooms={classrooms}
-            subjects={subjects}
-            addTeacher={addTeacher}
-            addClassroom={addClassroom}
-            autoAssignTeachers={autoAssignTeachers}
-            clearAllSchedules={clearAllSchedules}
-            exportData={exportData}
-          />
+          <ErrorBoundary>
+            <DashboardView
+              teachers={teachers}
+              classrooms={classrooms}
+              subjects={subjects}
+              addTeacher={addTeacher}
+              addClassroom={addClassroom}
+              autoAssignTeachers={autoAssignTeachers}
+              clearAllSchedules={clearAllSchedules}
+              exportData={exportData}
+            />
+          </ErrorBoundary>
         )}
         
         {currentView === 'classroom' && (
-          <ClassroomScheduleView 
-            classrooms={classrooms}
-            teachers={teachers}
-            subjects={subjects}
-            schedules={schedules}
-            selectedClassroom={selectedClassroom}
-            setSelectedClassroom={setSelectedClassroom}
-            updateSchedule={updateSchedule}
-            getAvailableTeachers={getAvailableTeachers}
-            isTeacherAvailable={isTeacherAvailable}
-          />
+          <ErrorBoundary>
+            <ClassroomScheduleView 
+              classrooms={classrooms}
+              teachers={teachers}
+              subjects={subjects}
+              schedules={schedules}
+              selectedClassroom={selectedClassroom}
+              setSelectedClassroom={setSelectedClassroom}
+              updateSchedule={updateSchedule}
+              getAvailableTeachers={getAvailableTeachers}
+              getSubjectsForClass={getSubjectsForClass} // Pass the function
+              getTeachersForSubject={getTeachersForSubject} // Pass the function
+              isTeacherAvailable={isTeacherAvailable}
+            />
+          </ErrorBoundary>
         )}
         
         {currentView === 'teacher' && (
-          <TeacherTimetableView 
-            teachers={teachers}
-            selectedTeacher={selectedTeacher}
-            setSelectedTeacher={setSelectedTeacher}
-            getTeacherTimetable={getTeacherTimetable}
-          />
+          <ErrorBoundary>
+            <TeacherTimetableView 
+              teachers={teachers}
+              selectedTeacher={selectedTeacher}
+              setSelectedTeacher={setSelectedTeacher}
+              getTeacherTimetable={getTeacherTimetable}
+            />
+          </ErrorBoundary>
         )}
       </div>
     </div>
