@@ -1,5 +1,4 @@
 // src/components/ScheduleTable.jsx
-// components/ScheduleTable.jsx
 import React from 'react';
 
 const ScheduleTable = ({
@@ -10,16 +9,18 @@ const ScheduleTable = ({
   subjects = [],
   onUpdateSchedule,
   getTeachersForTimeSlot,
-  type = 'classroom'
+  type = 'classroom',
+  classroom // needed for grade
 }) => {
   const renderClassroomCell = (cell, rowIndex, colIndex) => {
-    // Get available teachers for this specific time slot
-    const availableTeachers = getTeachersForTimeSlot ? 
-      getTeachersForTimeSlot(rowIndex, colIndex) : 
-      teachers;
+    // Recompute available teachers based on subject + grade
+    const availableTeachers = getTeachersForTimeSlot
+      ? getTeachersForTimeSlot(rowIndex, colIndex, classroom?.grade, cell.subject)
+      : teachers;
 
     return (
       <div className="space-y-1">
+        {/* Teacher dropdown */}
         <select
           value={cell.teacherId || ''}
           onChange={(e) => {
@@ -29,31 +30,36 @@ const ScheduleTable = ({
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">Select Teacher</option>
-          {availableTeachers.map(teacher => (
+          {availableTeachers.map((teacher) => (
             <option key={teacher.id} value={teacher.id}>
               {teacher.name}
             </option>
           ))}
         </select>
+
+        {/* Subject dropdown */}
         <select
-          value={cell.subject}
+          value={cell.subject || ''}
           onChange={(e) => {
-            onUpdateSchedule(rowIndex, colIndex, cell.teacherId, e.target.value);
+            const newSubject = e.target.value;
+            // 🔑 Reset teacher when subject changes, because old teacher may not match new subject
+            onUpdateSchedule(rowIndex, colIndex, '', newSubject);
           }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           <option value="">Select Subject</option>
-          {subjects.map(subject => (
+          {subjects.map((subject) => (
             <option key={subject} value={subject}>
               {subject}
             </option>
           ))}
         </select>
-        
-        {/* Show availability info */}
+
+        {/* Availability info */}
         {getTeachersForTimeSlot && (
           <div className="text-xs text-gray-500">
-            {availableTeachers.length} teacher{availableTeachers.length !== 1 ? 's' : ''} available
+            {availableTeachers.length} teacher
+            {availableTeachers.length !== 1 ? 's' : ''} available
           </div>
         )}
       </div>
@@ -92,26 +98,27 @@ const ScheduleTable = ({
           </tr>
         </thead>
         <tbody>
-          {scheduleData && scheduleData.map((row, rowIndex) => (
-            <tr
-              key={rowIndex}
-              className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
-            >
-              <td className="border border-gray-300 px-4 py-2 font-semibold text-gray-700 bg-gray-100">
-                {days[rowIndex]}
-              </td>
-              {row.map((cell, colIndex) => (
-                <td
-                  key={`${rowIndex}-${colIndex}`}
-                  className="border border-gray-300 p-2 text-center"
-                >
-                  {type === 'classroom'
-                    ? renderClassroomCell(cell, rowIndex, colIndex)
-                    : renderTeacherCell(cell)}
+          {scheduleData &&
+            scheduleData.map((row, rowIndex) => (
+              <tr
+                key={rowIndex}
+                className={rowIndex % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+              >
+                <td className="border border-gray-300 px-4 py-2 font-semibold text-gray-700 bg-gray-100">
+                  {days[rowIndex]}
                 </td>
-              ))}
-            </tr>
-          ))}
+                {row.map((cell, colIndex) => (
+                  <td
+                    key={`${rowIndex}-${colIndex}`}
+                    className="border border-gray-300 p-2 text-center"
+                  >
+                    {type === 'classroom'
+                      ? renderClassroomCell(cell, rowIndex, colIndex)
+                      : renderTeacherCell(cell)}
+                  </td>
+                ))}
+              </tr>
+            ))}
         </tbody>
       </table>
     </div>
