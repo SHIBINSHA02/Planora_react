@@ -231,46 +231,44 @@ export const useScheduleData = () => {
     );
   };
 
-  // ENHANCED: Update schedule assignment with better validation
-  const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) => {
-    const teacher = teacherId ? teachers.find(t => t.id === parseInt(teacherId)) : null;
-    const classroom = classrooms.find(c => c.id === classroomId);
-    
-    // If both teacher and subject are provided, validate compatibility
-    if (teacher && subject && classroom) {
+  // Update schedule assignment
+  // Update schedule assignment
+const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) => {
+  const teacher = teachers.find(t => t.id === parseInt(teacherId));
+  const classroom = classrooms.find(c => c.id === classroomId);
+  
+  // Validate only if subject is selected
+  if (teacher && classroom) {
+    if (subject) {
       if (!teacher.subjects.includes(subject)) {
         console.warn(`Teacher ${teacher.name} cannot teach ${subject}`);
         return false;
       }
-      if (!teacher.classes.includes(classroom.grade)) {
-        console.warn(`Teacher ${teacher.name} cannot teach class ${classroom.grade}`);
-        return false;
-      }
-
-      // Check if teacher is available at this time slot
-      if (!isTeacherAvailable(teacher.id, dayIndex, periodIndex, classroomId)) {
-        console.warn(`Teacher ${teacher.name} is not available at this time slot`);
-        return false;
-      }
     }
+    if (!teacher.classes.includes(classroom.grade)) {
+      console.warn(`Teacher ${teacher.name} cannot teach class ${classroom.grade}`);
+      return false;
+    }
+  }
 
-    setSchedules(prev => {
-      const newSchedules = { ...prev };
-      newSchedules[classroomId] = newSchedules[classroomId].map((day, dIdx) =>
-        day.map((period, pIdx) => 
-          dIdx === dayIndex && pIdx === periodIndex 
-            ? { 
-                teacher: teacher ? teacher.name : '', 
-                subject: subject || '', 
-                teacherId: teacherId ? parseInt(teacherId) : null 
-              }
-            : period
-        )
-      );
-      return newSchedules;
-    });
-    return true;
-  };
+  setSchedules(prev => {
+    const newSchedules = { ...prev };
+    newSchedules[classroomId] = newSchedules[classroomId].map((day, dIdx) =>
+      day.map((period, pIdx) => 
+        dIdx === dayIndex && pIdx === periodIndex 
+          ? { 
+              teacher: teacher ? teacher.name : '', 
+              subject, 
+              teacherId: teacherId ? parseInt(teacherId) : null 
+            }
+          : period
+      )
+    );
+    return newSchedules;
+  });
+  return true;
+};
+
 
   // Clear all schedules
   const clearAllSchedules = () => {
