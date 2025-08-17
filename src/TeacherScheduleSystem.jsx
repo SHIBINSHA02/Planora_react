@@ -27,6 +27,8 @@ const TeacherScheduleSystem = () => {
     getTeachersForSubject, // Add this
     isTeacherAvailable,
     autoAssignTeachers,
+    getTeachersForTimeSlot,
+    getSubjectsForTeacher,
     exportData
   } = useScheduleData();
 
@@ -69,11 +71,13 @@ const TeacherScheduleSystem = () => {
               schedules={schedules}
               selectedClassroom={selectedClassroom}
               setSelectedClassroom={setSelectedClassroom}
-              updateSchedule={updateSchedule}
               getAvailableTeachers={getAvailableTeachers}
               getSubjectsForClass={getSubjectsForClass} // Pass the function
               getTeachersForSubject={getTeachersForSubject} // Pass the function
               isTeacherAvailable={isTeacherAvailable}
+              getTeachersForTimeSlot={getTeachersForTimeSlot}
+            getSubjectsForTeacher={getSubjectsForTeacher}
+            onUpdateSchedule={updateSchedule}
             />
           </ErrorBoundary>
         )}
