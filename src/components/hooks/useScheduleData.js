@@ -148,35 +148,14 @@ export const useScheduleData = () => {
     return false;
   };
 
-  // NEW: Get subjects that a specific teacher can teach for a specific grade and time slot
-  const getSubjectsForTeacher = (teacherId, grade, dayIndex = null, periodIndex = null) => {
-    const teacher = teachers.find(t => t.id === parseInt(teacherId));
-    if (!teacher) return [];
+  // Get available teachers for a specific classroom, day and period
+  const getAvailableTeachers = (classroomId, dayIndex, periodIndex, selectedSubject = null) => {
+    const classroom = classrooms.find(c => c.id === classroomId);
+    if (!classroom) return [];
 
-    // Check if teacher can teach this grade
-    if (!teacher.classes.includes(grade)) {
-      return [];
-    }
-
-    // Get subjects the teacher can teach
-    const teacherSubjects = teacher.subjects;
-    
-    // Get subjects available for this grade
-    const gradeSubjects = getSubjectsForClass(grade);
-    
-    // Return intersection of teacher's subjects and grade subjects
-    const availableSubjects = teacherSubjects.filter(subject => 
-      gradeSubjects.includes(subject)
-    );
-
-    return availableSubjects;
-  };
-
-  // ENHANCED: Get available teachers for a specific time slot with better filtering
-  const getTeachersForTimeSlot = (dayIndex, periodIndex, grade, selectedSubject = null) => {
     return teachers.filter(teacher => {
       // Check if teacher can teach this class
-      if (!teacher.classes.includes(grade)) {
+      if (!teacher.classes.includes(classroom.grade)) {
         return false;
       }
 
@@ -186,8 +165,12 @@ export const useScheduleData = () => {
       }
 
       // Check if teacher is already assigned at this day/period in any classroom
-      for (const classroomId of Object.keys(schedules)) {
-        const classroomSchedule = schedules[classroomId];
+      for (const otherClassroomId of Object.keys(schedules)) {
+        if (parseInt(otherClassroomId) === classroomId) {
+          continue; // Skip current classroom
+        }
+        
+        const classroomSchedule = schedules[otherClassroomId];
         if (classroomSchedule[dayIndex] && classroomSchedule[dayIndex][periodIndex]) {
           const period = classroomSchedule[dayIndex][periodIndex];
           if (period.teacherId === teacher.id) {
@@ -197,31 +180,6 @@ export const useScheduleData = () => {
       }
       return true; // Teacher is available
     });
-  };
-
-  // Get available teachers for a specific classroom, day and period (backward compatibility)
-  const getAvailableTeachers = (classroomId, dayIndex, periodIndex, selectedSubject = null) => {
-    const classroom = classrooms.find(c => c.id === classroomId);
-    if (!classroom) return [];
-
-    return getTeachersForTimeSlot(dayIndex, periodIndex, classroom.grade, selectedSubject);
-  };
-
-  // ENHANCED: Get available subjects for a specific classroom and time slot
-  const getAvailableSubjects = (classroomId, dayIndex, periodIndex, selectedTeacherId = null) => {
-    const classroom = classrooms.find(c => c.id === classroomId);
-    if (!classroom) return [];
-
-    // Get all subjects for this grade
-    const gradeSubjects = getSubjectsForClass(classroom.grade);
-
-    // If no teacher is selected, return all grade subjects
-    if (!selectedTeacherId) {
-      return gradeSubjects;
-    }
-
-    // If teacher is selected, return subjects that teacher can teach for this grade
-    return getSubjectsForTeacher(selectedTeacherId, classroom.grade, dayIndex, periodIndex);
   };
 
   // Get teachers who can teach a specific subject to a specific class
@@ -440,11 +398,6 @@ const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) 
     getAvailableTeachers,
     getTeachersForSubject,
     getSubjectsForClass,
-    // NEW FUNCTIONS FOR DYNAMIC FILTERING
-    getSubjectsForTeacher,          // Get subjects a teacher can teach for a specific grade
-    getTeachersForTimeSlot,         // Get available teachers for a specific time slot
-    getAvailableSubjects,           // Get available subjects for a classroom/time slot
-    // EXISTING FUNCTIONS
     isTeacherAvailable,
     autoAssignTeachers,
     getScheduleConflicts,

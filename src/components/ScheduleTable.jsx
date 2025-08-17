@@ -1,4 +1,3 @@
-// src/components/ScheduleTable.jsx
 "use client"
 
 // src/components/ScheduleTable.jsx
@@ -79,7 +78,6 @@ const ScheduleTable = ({
             onUpdateSchedule(rowIndex, colIndex, newTeacherId, subject)
           }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-          disabled={!availableTeachers || availableTeachers.length === 0}
         >
           <option value="">Select Teacher</option>
           {sortedTeachers.map((teacher) => (
@@ -114,7 +112,6 @@ const ScheduleTable = ({
             onUpdateSchedule(rowIndex, colIndex, teacherId, newSubject)
           }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-          disabled={!availableSubjects || availableSubjects.length === 0}
         >
           <option value="">Select Subject</option>
           {sortedSubjects.map((subject) => (
