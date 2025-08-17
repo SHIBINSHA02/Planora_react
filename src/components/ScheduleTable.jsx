@@ -9,28 +9,90 @@ const ScheduleTable = ({
   subjects = [],
   onUpdateSchedule,
   getTeachersForTimeSlot,
+  getSubjectsForTeacher,
   type = 'classroom',
-  classroom // needed for grade
+  classroom
 }) => {
   const renderClassroomCell = (cell, rowIndex, colIndex) => {
-    // Recompute available teachers based on subject + grade
-    const availableTeachers = getTeachersForTimeSlot
-      ? getTeachersForTimeSlot(rowIndex, colIndex, classroom?.grade, cell.subject)
-      : teachers;
+    console.log('Rendering cell:', { cell, rowIndex, colIndex, classroom }); // Debug log
+
+    // Ensure cell is an object with default values
+    const safeCell = cell || { teacher: '', subject: '', teacherId: null };
+
+    // Recompute available teachers based on subject + grade + current time slot
+    let availableTeachers = [];
+    
+    if (getTeachersForTimeSlot && classroom?.grade) {
+      availableTeachers = getTeachersForTimeSlot(rowIndex, colIndex, classroom.grade, safeCell.subject);
+    } else if (classroom?.grade) {
+      // Fallback filtering if getTeachersForTimeSlot is not available
+      availableTeachers = teachers.filter(teacher => 
+        teacher.classes && teacher.classes.includes(classroom.grade)
+      );
+    } else {
+      availableTeachers = teachers;
+    }
+
+    console.log('Available teachers:', availableTeachers); // Debug log
+
+    // Get available subjects based on selected teacher and grade
+    let availableSubjects = [];
+    
+    if (safeCell.teacherId && getSubjectsForTeacher && classroom?.grade) {
+      availableSubjects = getSubjectsForTeacher(safeCell.teacherId, classroom.grade, rowIndex, colIndex);
+    } else {
+      availableSubjects = subjects;
+    }
+
+    console.log('Available subjects:', availableSubjects); // Debug log
+
+    const handleTeacherChange = (teacherId) => {
+      console.log('Teacher change:', teacherId); // Debug log
+      
+      // When teacher changes, keep subject if it's valid for the new teacher
+      let newSubject = safeCell.subject || '';
+      
+      if (teacherId && getSubjectsForTeacher && classroom?.grade) {
+        const teacherSubjects = getSubjectsForTeacher(teacherId, classroom.grade, rowIndex, colIndex);
+        // Reset subject if current subject is not available for the new teacher
+        if (newSubject && !teacherSubjects.includes(newSubject)) {
+          newSubject = '';
+        }
+      }
+      
+      onUpdateSchedule(rowIndex, colIndex, teacherId, newSubject);
+    };
+
+    const handleSubjectChange = (newSubject) => {
+      console.log('Subject change:', newSubject); // Debug log
+      
+      // When subject changes, reset teacher if current teacher can't teach this subject
+      let teacherId = safeCell.teacherId || '';
+      
+      if (newSubject && getTeachersForTimeSlot && classroom?.grade) {
+        const subjectTeachers = getTeachersForTimeSlot(rowIndex, colIndex, classroom.grade, newSubject);
+        const currentTeacherCanTeach = teacherId && subjectTeachers.some(t => t.id == teacherId);
+        
+        // Reset teacher if current teacher can't teach the new subject
+        if (!currentTeacherCanTeach) {
+          teacherId = '';
+        }
+      }
+      
+      onUpdateSchedule(rowIndex, colIndex, teacherId, newSubject);
+    };
 
     return (
       <div className="space-y-1">
         {/* Teacher dropdown */}
         <select
-          value={cell.teacherId || ''}
-          onChange={(e) => {
-            const teacherId = e.target.value;
-            onUpdateSchedule(rowIndex, colIndex, teacherId, cell.subject);
-          }}
+          value={safeCell.teacherId || ''}
+          onChange={(e) => handleTeacherChange(e.target.value)}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          disabled={!availableTeachers || availableTeachers.length === 0}
         >
           <option value="">Select Teacher</option>
-          {availableTeachers.map((teacher) => (
+          {availableTeachers && Array.isArray(availableTeachers) && availableTeachers.map((teacher) => (
             <option key={teacher.id} value={teacher.id}>
               {teacher.name}
             </option>
@@ -39,16 +101,13 @@ const ScheduleTable = ({
 
         {/* Subject dropdown */}
         <select
-          value={cell.subject || ''}
-          onChange={(e) => {
-            const newSubject = e.target.value;
-            // 🔑 Reset teacher when subject changes, because old teacher may not match new subject
-            onUpdateSchedule(rowIndex, colIndex, '', newSubject);
-          }}
+          value={safeCell.subject || ''}
+          onChange={(e) => handleSubjectChange(e.target.value)}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          disabled={!availableSubjects || availableSubjects.length === 0}
         >
           <option value="">Select Subject</option>
-          {subjects.map((subject) => (
+          {availableSubjects && Array.isArray(availableSubjects) && availableSubjects.map((subject) => (
             <option key={subject} value={subject}>
               {subject}
             </option>
@@ -56,12 +115,26 @@ const ScheduleTable = ({
         </select>
 
         {/* Availability info */}
-        {getTeachersForTimeSlot && (
-          <div className="text-xs text-gray-500">
-            {availableTeachers.length} teacher
-            {availableTeachers.length !== 1 ? 's' : ''} available
-          </div>
-        )}
+        <div className="text-xs text-gray-500 space-y-0.5">
+          {getTeachersForTimeSlot && availableTeachers && Array.isArray(availableTeachers) && (
+            <div>
+              {availableTeachers.length} teacher
+              {availableTeachers.length !== 1 ? 's' : ''} available
+            </div>
+          )}
+          {getSubjectsForTeacher && safeCell.teacherId && availableSubjects && Array.isArray(availableSubjects) && (
+            <div>
+              {availableSubjects.length} subject
+              {availableSubjects.length !== 1 ? 's' : ''} available
+            </div>
+          )}
+          {(!availableTeachers || !Array.isArray(availableTeachers) || availableTeachers.length === 0) && (
+            <div className="text-red-500">No teachers available</div>
+          )}
+          {(!availableSubjects || !Array.isArray(availableSubjects) || availableSubjects.length === 0) && safeCell.teacherId && (
+            <div className="text-red-500">No subjects available</div>
+          )}
+        </div>
       </div>
     );
   };
