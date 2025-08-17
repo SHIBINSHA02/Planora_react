@@ -9,13 +9,11 @@ const ClassroomScheduleView = ({
   schedules,
   selectedClassroom,
   setSelectedClassroom,
+  updateSchedule,
   getAvailableTeachers,
   getTeachersForSubject,
   getSubjectsForClass,
-  getTeachersForTimeSlot,  // New function from hook
-  getSubjectsForTeacher,   // New function from hook
-  isTeacherAvailable,
-  updateSchedule,
+  isTeacherAvailable
 }) => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const periods = ['Period 1', 'Period 2', 'Period 3', 'Period 4', 'Period 5', 'Period 6'];
@@ -33,15 +31,16 @@ const ClassroomScheduleView = ({
     return getSubjectsForClass(classroom.grade);
   };
 
-  // Wrapper function for ScheduleTable - passes the correct parameters
-  const getTeachersForTimeSlotWrapper = (dayIndex, periodIndex, grade, selectedSubject = null) => {
-    // Use the new function from the hook
-    return getTeachersForTimeSlot(dayIndex, periodIndex, grade, selectedSubject);
-  };
-
-  // Wrapper function for getting subjects for teacher
-  const getSubjectsForTeacherWrapper = (teacherId, grade, dayIndex = null, periodIndex = null) => {
-    return getSubjectsForTeacher(teacherId, grade, dayIndex, periodIndex);
+  // Function to get available teachers for a specific time slot and classroom
+  const getTeachersForTimeSlot = (dayIndex, periodIndex, selectedSubject = null) => {
+    if (!selectedClassroom) return [];
+    
+    return getAvailableTeachers(
+      parseInt(selectedClassroom), 
+      dayIndex, 
+      periodIndex, 
+      selectedSubject
+    );
   };
 
   // Function to get teachers who can teach a specific subject to current classroom
@@ -81,18 +80,16 @@ const ClassroomScheduleView = ({
     }
 
     // Validate the assignment
-    if (teacherId && subject && !validateTeacherAssignment(dayIndex, periodIndex, teacherId, subject)) {
+    if (!validateTeacherAssignment(dayIndex, periodIndex, teacherId, subject)) {
       console.warn('Invalid teacher assignment');
       return false;
     }
 
     // Check if subject is valid for this class
-    if (subject) {
-      const validSubjects = getSubjectsForClass(classroom.grade);
-      if (!validSubjects.includes(subject)) {
-        console.warn(`Subject ${subject} is not valid for class ${classroom.grade}`);
-        return false;
-      }
+    const validSubjects = getSubjectsForClass(classroom.grade);
+    if (subject && !validSubjects.includes(subject)) {
+      console.warn(`Subject ${subject} is not valid for class ${classroom.grade}`);
+      return false;
     }
 
     return updateSchedule(parseInt(selectedClassroom), dayIndex, periodIndex, teacherId, subject);
@@ -220,8 +217,6 @@ const ClassroomScheduleView = ({
               <li>• Only teachers qualified for this class and subject are shown</li>
               <li>• Teachers cannot be assigned to multiple classes at the same time</li>
               <li>• Subjects are limited to the curriculum for {currentClassroom?.grade}</li>
-              <li>• Selecting a teacher will filter subjects to what they can teach</li>
-              <li>• Selecting a subject will filter teachers to those qualified</li>
             </ul>
           </div>
 
@@ -230,12 +225,13 @@ const ClassroomScheduleView = ({
             days={days}
             periods={periods}
             teachers={teachers}
-            subjects={availableSubjects}
+            subjects={availableSubjects} // Pass class-specific subjects
             onUpdateSchedule={handleUpdateSchedule}
-            getTeachersForTimeSlot={getTeachersForTimeSlotWrapper}
-            getSubjectsForTeacher={getSubjectsForTeacherWrapper}
+            getTeachersForTimeSlot={getTeachersForTimeSlot}
+            getTeachersForSubject={getTeachersForCurrentClassSubject}
+            validateAssignment={validateTeacherAssignment}
             type="classroom"
-            classroom={currentClassroom} // Pass full classroom object
+            classroomGrade={currentClassroom?.grade}
           />
 
           {/* Schedule Statistics */}
@@ -312,8 +308,6 @@ ClassroomScheduleView.propTypes = {
   getAvailableTeachers: PropTypes.func.isRequired,
   getTeachersForSubject: PropTypes.func.isRequired,
   getSubjectsForClass: PropTypes.func.isRequired,
-  getTeachersForTimeSlot: PropTypes.func.isRequired,  // Added
-  getSubjectsForTeacher: PropTypes.func.isRequired,   // Added
   isTeacherAvailable: PropTypes.func.isRequired,
 };
 
