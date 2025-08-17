@@ -50,11 +50,32 @@ const ScheduleTable = ({
           </button>
         )}
 
+        {/* Teacher Select */}
         <select
           value={cell.teacherId || ""}
           onChange={(e) => {
-            const teacherId = e.target.value
-            onUpdateSchedule(rowIndex, colIndex, teacherId, cell.subject)
+            const newTeacherId = e.target.value
+            const newTeacher = allAvailableTeachers.find((t) => t.id === newTeacherId)
+
+            let subject = cell.subject
+
+            if (newTeacherId) {
+              if (subject) {
+                const canTeach =
+                  !newTeacher?.subjects ||
+                  newTeacher.subjects.length === 0 ||
+                  newTeacher.subjects.includes(subject)
+
+                if (!canTeach) {
+                  subject = "" // reset subject if teacher can't teach it
+                }
+              }
+              // ✅ if subject not chosen yet → keep subject empty, don't reset
+            } else {
+              subject = cell.subject || ""
+            }
+
+            onUpdateSchedule(rowIndex, colIndex, newTeacherId, subject)
           }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
@@ -66,19 +87,28 @@ const ScheduleTable = ({
           ))}
         </select>
 
+        {/* Subject Select */}
         <select
           value={cell.subject || ""}
           onChange={(e) => {
             const newSubject = e.target.value
             const currentTeacher = allAvailableTeachers.find((t) => t.id === cell.teacherId)
 
-            const teacherCanTeachSubject =
-              !currentTeacher?.subjects ||
-              currentTeacher.subjects.length === 0 ||
-              currentTeacher.subjects.includes(newSubject) ||
-              !newSubject
+            let teacherId = cell.teacherId
 
-            const teacherId = teacherCanTeachSubject ? cell.teacherId : ""
+            if (newSubject) {
+              const canTeach =
+                !currentTeacher?.subjects ||
+                currentTeacher.subjects.length === 0 ||
+                currentTeacher.subjects.includes(newSubject)
+
+              if (!canTeach) {
+                teacherId = "" // reset teacher if subject not valid
+              }
+            } else {
+              teacherId = cell.teacherId || ""
+            }
+
             onUpdateSchedule(rowIndex, colIndex, teacherId, newSubject)
           }}
           className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
