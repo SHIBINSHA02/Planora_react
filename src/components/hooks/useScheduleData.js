@@ -2,6 +2,9 @@
 import { useState } from 'react';
 
 export const useScheduleData = () => {
+
+
+  const [allowMultiTeacher, setAllowMultiTeacher] = useState(false);
   // Define class-specific subjects
   const classSubjects = {
     'S1': ['Mathematics', 'English', 'Science', 'Social Studies', 'Malayalam'],
@@ -401,6 +404,8 @@ const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) 
     isTeacherAvailable,
     autoAssignTeachers,
     getScheduleConflicts,
+    allowMultiTeacher,
+    setAllowMultiTeacher,
     exportData
   };
 };
