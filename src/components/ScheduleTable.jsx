@@ -1,6 +1,5 @@
 "use client"
 
-// src/components/ScheduleTable.jsx
 import React from "react"
 
 const ScheduleTable = ({
@@ -12,7 +11,7 @@ const ScheduleTable = ({
   onUpdateSchedule,
   getTeachersForTimeSlot,
   type = "classroom",
-  classroom, // needed for grade
+  classroom,
 }) => {
   const renderClassroomCell = (cell, rowIndex, colIndex) => {
     const allAvailableTeachers = getTeachersForTimeSlot
@@ -50,76 +49,81 @@ const ScheduleTable = ({
           </button>
         )}
 
-        {/* Teacher Select */}
-        <select
-          value={cell.teacherId || ""}
-          onChange={(e) => {
-            const newTeacherId = e.target.value
-            const newTeacher = allAvailableTeachers.find((t) => t.id === newTeacherId)
+        <div className="flex items-center space-x-2">
+          <span className="text-green-500 text-lg">+</span>
+          <select
+            value={cell.teacherId || ""}
+            onChange={(e) => {
+              const newTeacherId = e.target.value
+              const newTeacher = allAvailableTeachers.find((t) => t.id === newTeacherId)
 
-            let subject = cell.subject
+              let subject = cell.subject
 
-            if (newTeacherId) {
-              if (subject) {
+              if (newTeacherId) {
+                if (subject) {
+                  const canTeach =
+                    !newTeacher?.subjects ||
+                    newTeacher.subjects.length === 0 ||
+                    newTeacher.subjects.includes(subject)
+
+                  if (!canTeach) {
+                    subject = ""
+                  }
+                }
+              } else {
+                subject = cell.subject || ""
+              }
+
+              onUpdateSchedule(rowIndex, colIndex, newTeacherId, subject)
+            }}
+            className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Select Teacher</option>
+            {sortedTeachers.map((teacher) => (
+              <option key={teacher.id} value={teacher.id}>
+                {teacher.name}
+              </option>
+            ))}
+          </select>
+          <span className="text-red-500 text-lg">−</span>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <span className="text-green-500 text-lg">+</span>
+          <select
+            value={cell.subject || ""}
+            onChange={(e) => {
+              const newSubject = e.target.value
+              const currentTeacher = allAvailableTeachers.find((t) => t.id === cell.teacherId)
+
+              let teacherId = cell.teacherId
+
+              if (newSubject) {
                 const canTeach =
-                  !newTeacher?.subjects ||
-                  newTeacher.subjects.length === 0 ||
-                  newTeacher.subjects.includes(subject)
+                  !currentTeacher?.subjects ||
+                  currentTeacher.subjects.length === 0 ||
+                  currentTeacher.subjects.includes(newSubject)
 
                 if (!canTeach) {
-                  subject = "" // reset subject if teacher can't teach it
+                  teacherId = ""
                 }
+              } else {
+                teacherId = cell.teacherId || ""
               }
-              // ✅ if subject not chosen yet → keep subject empty, don't reset
-            } else {
-              subject = cell.subject || ""
-            }
 
-            onUpdateSchedule(rowIndex, colIndex, newTeacherId, subject)
-          }}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="">Select Teacher</option>
-          {sortedTeachers.map((teacher) => (
-            <option key={teacher.id} value={teacher.id}>
-              {teacher.name}
+              onUpdateSchedule(rowIndex, colIndex, teacherId, newSubject)
+            }}
+            className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
+          >
+            <option value="">Select Subject</option>
+            {sortedSubjects.map((subject) => (
+              <option key={subject} value={subject}>
+                {subject}
             </option>
-          ))}
-        </select>
-
-        {/* Subject Select */}
-        <select
-          value={cell.subject || ""}
-          onChange={(e) => {
-            const newSubject = e.target.value
-            const currentTeacher = allAvailableTeachers.find((t) => t.id === cell.teacherId)
-
-            let teacherId = cell.teacherId
-
-            if (newSubject) {
-              const canTeach =
-                !currentTeacher?.subjects ||
-                currentTeacher.subjects.length === 0 ||
-                currentTeacher.subjects.includes(newSubject)
-
-              if (!canTeach) {
-                teacherId = "" // reset teacher if subject not valid
-              }
-            } else {
-              teacherId = cell.teacherId || ""
-            }
-
-            onUpdateSchedule(rowIndex, colIndex, teacherId, newSubject)
-          }}
-          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-        >
-          <option value="">Select Subject</option>
-          {sortedSubjects.map((subject) => (
-            <option key={subject} value={subject}>
-              {subject}
-            </option>
-          ))}
-        </select>
+            ))}
+          </select>
+          <span className="text-red-500 text-lg">−</span>
+        </div>
 
         {getTeachersForTimeSlot && (
           <div className="text-xs text-gray-500">
