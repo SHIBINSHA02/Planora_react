@@ -1,3 +1,4 @@
+// src/components/ScheduleTable.jsx
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
@@ -21,34 +22,59 @@ const ScheduleTable = ({
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 })
   const [openDropdowns, setOpenDropdowns] = useState({}) // Track which dropdowns are open
 
-  // Get teacher's schedule grid (5 days x 6 periods)
-  const getTeacherScheduleGrid = (teacherId) => {
-    const grid = Array(5).fill().map(() => Array(6).fill(false))
+  // Get teacher's availability for the current time slot across all periods
+  const getTeacherAvailabilityGrid = (teacherId, currentDayIndex, currentPeriodIndex) => {
+    const grid = Array(days.length).fill().map(() => Array(periods.length).fill(false))
     
-    // Check all classrooms for this teacher's assignments
-    Object.keys(schedules).forEach(classroomId => {
-      const classroomSchedule = schedules[classroomId]
-      if (classroomSchedule) {
-        classroomSchedule.forEach((day, dayIndex) => {
-          day.forEach((period, periodIndex) => {
-            if (period.teacherId === teacherId) {
-              grid[dayIndex][periodIndex] = {
-                isBooked: true,
-                className: classrooms.find(c => c.id === parseInt(classroomId))?.name || 'Unknown',
-                subject: period.subject
+    // Convert teacherId to number for comparison if it's a string
+    const targetTeacherId = typeof teacherId === 'string' ? parseInt(teacherId) : teacherId
+    
+    // Check availability for each time slot across all classrooms
+    for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
+      for (let periodIndex = 0; periodIndex < periods.length; periodIndex++) {
+        let isAvailable = true
+        let assignedToClassroom = null
+        let assignedSubject = null
+        
+        // Check all classrooms for this specific time slot
+        Object.keys(schedules).forEach(classroomId => {
+          const classroomSchedule = schedules[classroomId]
+          if (classroomSchedule && Array.isArray(classroomSchedule)) {
+            const daySchedule = classroomSchedule[dayIndex]
+            if (Array.isArray(daySchedule)) {
+              const period = daySchedule[periodIndex]
+              if (period) {
+                const periodTeacherId = period?.teacherId || period?.teacher_id || null
+                const periodTeacherIdNum = typeof periodTeacherId === 'string' ? parseInt(periodTeacherId) : periodTeacherId
+                
+                if (periodTeacherIdNum === targetTeacherId && periodTeacherIdNum !== null && !isNaN(periodTeacherIdNum)) {
+                  isAvailable = false
+                  assignedToClassroom = classrooms.find(c => c.id === parseInt(classroomId))?.name || `Classroom ${classroomId}`
+                  assignedSubject = period.subject || 'Unknown Subject'
+                }
               }
             }
-          })
+          }
         })
+        
+        grid[dayIndex][periodIndex] = {
+          isBooked: !isAvailable,
+          className: assignedToClassroom,
+          subject: assignedSubject,
+          isCurrentSlot: dayIndex === currentDayIndex && periodIndex === currentPeriodIndex
+        }
       }
-    })
+    }
     
     return grid
   }
 
   // Teacher Schedule Grid Component
-  const TeacherScheduleGrid = ({ teacher, position }) => {
-    const scheduleGrid = getTeacherScheduleGrid(teacher.id)
+  const TeacherScheduleGrid = ({ teacher, position, currentDayIndex, currentPeriodIndex }) => {
+    const scheduleGrid = getTeacherAvailabilityGrid(teacher.id, currentDayIndex, currentPeriodIndex)
+    
+    // Debug: Count total assignments for this teacher
+    const totalAssignments = scheduleGrid.flat().filter(slot => slot.isBooked).length
     
     return (
       <div 
@@ -67,9 +93,15 @@ const ScheduleTable = ({
         }}
       >
         <div className="mb-2">
-          <h4 className="font-semibold text-sm text-gray-800">{teacher.name}'s Schedule</h4>
+          <h4 className="font-semibold text-sm text-gray-800">{teacher.name}'s Weekly Availability</h4>
           <p className="text-xs text-gray-600">
             Subjects: {teacher.subjects?.join(', ') || 'All subjects'}
+          </p>
+          <p className="text-xs text-blue-600">
+            Current slot: {days[currentDayIndex]} - Period {currentPeriodIndex + 1}
+          </p>
+          <p className="text-xs text-red-600">
+            Total occupied slots: {totalAssignments}
           </p>
         </div>
         
@@ -94,18 +126,26 @@ const ScheduleTable = ({
                   <div
                     key={`${dayIndex}-${periodIndex}`}
                     className={`
-                      h-8 w-8 rounded border text-center flex items-center justify-center cursor-help
-                      ${slot.isBooked 
-                        ? 'bg-red-500 text-white border-red-600 shadow-sm' 
-                        : 'bg-green-100 text-green-800 border-green-300'
+                      h-8 w-8 rounded border text-center flex items-center justify-center cursor-help relative
+                      ${slot.isCurrentSlot 
+                        ? 'bg-blue-500 text-white border-blue-600 shadow-lg ring-2 ring-blue-300' 
+                        : slot.isBooked 
+                          ? 'bg-red-500 text-white border-red-600 shadow-sm' 
+                          : 'bg-green-100 text-green-800 border-green-300'
                       }
                     `}
-                    title={slot.isBooked 
-                      ? `Busy: ${slot.className} - ${slot.subject}` 
-                      : 'Available'
+                    title={
+                      slot.isCurrentSlot
+                        ? `Current slot: ${days[dayIndex]} Period ${periodIndex + 1}${slot.isBooked ? ` - Busy: ${slot.className} - ${slot.subject}` : ' - Available'}`
+                        : slot.isBooked 
+                          ? `Busy: ${slot.className} - ${slot.subject}` 
+                          : 'Available'
                     }
                   >
-                    {slot.isBooked ? '✕' : '✓'}
+                    {slot.isCurrentSlot ? '●' : slot.isBooked ? '✕' : '✓'}
+                    {slot.isCurrentSlot && (
+                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full"></div>
+                    )}
                   </div>
                 )
               })}
@@ -113,7 +153,7 @@ const ScheduleTable = ({
           ))}
         </div>
         
-        <div className="mt-3 flex items-center gap-4 text-xs border-t pt-2">
+        <div className="mt-3 flex items-center gap-3 text-xs border-t pt-2 flex-wrap">
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
             <span className="text-gray-600">Available</span>
@@ -122,25 +162,28 @@ const ScheduleTable = ({
             <div className="w-3 h-3 bg-red-500 rounded"></div>
             <span className="text-gray-600">Occupied</span>
           </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-blue-500 rounded relative">
+              <div className="absolute -top-0.5 -right-0.5 w-1.5 h-1.5 bg-yellow-400 rounded-full"></div>
+            </div>
+            <span className="text-gray-600">Current slot</span>
+          </div>
         </div>
       </div>
     )
   }
-
   // Custom Dropdown Component
   const CustomTeacherDropdown = ({ value, onChange, teachers, rowIndex, colIndex }) => {
     const [isOpen, setIsOpen] = useState(false)
     const dropdownRef = useRef(null)
     const hoverTimeoutRef = useRef(null)
     const hideTimeoutRef = useRef(null)
-    const [isSelecting, setIsSelecting] = useState(false)
 
     useEffect(() => {
       const handleClickOutside = (event) => {
         if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
           setIsOpen(false)
           setHoveredTeacher(null)
-          setIsSelecting(false)
           if (hoverTimeoutRef.current) {
             clearTimeout(hoverTimeoutRef.current)
           }
@@ -165,7 +208,8 @@ const ScheduleTable = ({
     const selectedTeacher = teachers.find(t => t.id == value)
 
     const handleTeacherHover = (teacher, event) => {
-      if (isSelecting) return // Don't show grid if user is actively selecting
+      // Only show grid if dropdown is open and stable
+      if (!isOpen) return
       
       // Clear any existing timeouts
       if (hoverTimeoutRef.current) {
@@ -175,61 +219,60 @@ const ScheduleTable = ({
         clearTimeout(hideTimeoutRef.current)
       }
       
-      // Add a delay before showing the grid
+      // Add a longer delay before showing the grid
       hoverTimeoutRef.current = setTimeout(() => {
-        if (!isSelecting) { // Double check we're not selecting
+        // Double check dropdown is still open
+        if (isOpen) {
           const rect = event.target.getBoundingClientRect()
-          setHoveredTeacher(teacher)
+          setHoveredTeacher({ ...teacher, currentDayIndex: rowIndex, currentPeriodIndex: colIndex })
           setHoverPosition({ x: rect.right, y: rect.top })
         }
-      }, 500) // Increased delay to 500ms
+      }, 800) // Increased to 800ms for more intentional hovering
     }
 
     const handleTeacherLeave = () => {
-      // Clear hover timeout
+      // Clear hover timeout immediately
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current)
       }
       
-      // Add a delay before hiding
+      // Hide the grid quickly when leaving
       hideTimeoutRef.current = setTimeout(() => {
-        if (!isSelecting) {
-          setHoveredTeacher(null)
-        }
-      }, 200)
+        setHoveredTeacher(null)
+      }, 150)
     }
 
     const handleSelect = (teacherId) => {
-      setIsSelecting(true)
-      
-      // Clear all timeouts and hide grid immediately
+      // Clear all timeouts immediately
       if (hoverTimeoutRef.current) {
         clearTimeout(hoverTimeoutRef.current)
       }
       if (hideTimeoutRef.current) {
         clearTimeout(hideTimeoutRef.current)
       }
+      
+      // Hide grid and close dropdown immediately
       setHoveredTeacher(null)
-      
-      // Update the selection
-      onChange(teacherId)
       setIsOpen(false)
-      
-      // Reset selecting state after a brief delay
-      setTimeout(() => {
-        setIsSelecting(false)
-      }, 100)
+      onChange(teacherId)
     }
 
     const handleDropdownToggle = (e) => {
       e.preventDefault()
       e.stopPropagation()
-      setIsSelecting(false)
-      setIsOpen(!isOpen)
-      if (!isOpen) {
-        // Clear any existing hover state when opening
+      
+      // If closing, clear everything
+      if (isOpen) {
         setHoveredTeacher(null)
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current)
+        }
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current)
+        }
       }
+      
+      setIsOpen(!isOpen)
     }
 
     return (
@@ -268,8 +311,10 @@ const ScheduleTable = ({
                   e.stopPropagation()
                   handleSelect(teacher.id)
                 }}
-                onMouseDown={(e) => e.preventDefault()} // Prevent focus issues
-                onMouseEnter={(e) => handleTeacherHover(teacher, e)}
+                onMouseEnter={(e) => {
+                  // Only trigger hover if mouse stays for a while
+                  setTimeout(() => handleTeacherHover(teacher, e), 100)
+                }}
                 onMouseLeave={handleTeacherLeave}
               >
                 <div className="font-medium">{teacher.name}</div>
@@ -480,6 +525,8 @@ const ScheduleTable = ({
         <TeacherScheduleGrid 
           teacher={hoveredTeacher} 
           position={hoverPosition}
+          currentDayIndex={hoveredTeacher.currentDayIndex}
+          currentPeriodIndex={hoveredTeacher.currentPeriodIndex}
         />
       )}
     </div>
