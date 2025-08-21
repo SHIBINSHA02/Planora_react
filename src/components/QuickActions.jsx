@@ -2,7 +2,7 @@
 import React from 'react';
 import { Calendar, Download, RotateCcw } from 'lucide-react';
 
-const QuickActions = ({ onAutoAssign, onClearAll, onExport, allowMultiTeacher, setAllowMultiTeacher }) => {
+const QuickActions = ({ onAutoAssign, onClearAll, onExport}) => {
   return (
     <div className="bg-white p-6 rounded-lg shadow-md">
       <h3 className="text-lg font-semibold mb-4">Quick Actions</h3>
@@ -32,30 +32,6 @@ const QuickActions = ({ onAutoAssign, onClearAll, onExport, allowMultiTeacher, s
           <Download className="h-4 w-4" />
           <span>Export Data</span>
         </button>
-      </div>
-
-      {/* Toggle Multi-Teacher */}
-      <div className="flex items-center justify-between bg-gray-50 p-4 rounded-md border border-gray-200">
-        <span className="text-sm font-medium text-gray-700">
-          Allow Multiple Teachers per Subject
-        </span>
-        <label className="inline-flex items-center cursor-pointer">
-          <input
-            type="checkbox"
-            checked={allowMultiTeacher}
-            onChange={(e) => setAllowMultiTeacher(e.target.checked)}
-            className="sr-only"
-          />
-          <div className={`w-11 h-6 rounded-full transition-colors ${
-            allowMultiTeacher ? 'bg-green-500' : 'bg-gray-300'
-          } relative`}>
-            <span
-              className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transform transition-transform ${
-                allowMultiTeacher ? 'translate-x-5' : 'translate-x-0'
-              }`}
-            />
-          </div>
-        </label>
       </div>
     </div>
   );

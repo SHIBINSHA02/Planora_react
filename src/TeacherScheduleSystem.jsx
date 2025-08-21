@@ -27,8 +27,6 @@ const TeacherScheduleSystem = () => {
     getTeachersForSubject, // Add this
     isTeacherAvailable,
     autoAssignTeachers,
-    allowMultiTeacher,   
-    setAllowMultiTeacher,
     exportData
   } = useScheduleData();
 
@@ -58,8 +56,7 @@ const TeacherScheduleSystem = () => {
               autoAssignTeachers={autoAssignTeachers}
               clearAllSchedules={clearAllSchedules}
               exportData={exportData}
-              allowMultiTeacher={allowMultiTeacher}
-              setAllowMultiTeacher={setAllowMultiTeacher}
+            
             />
           </ErrorBoundary>
         )}
