@@ -1,3 +1,4 @@
+// src/components/ScheduleTable.jsx
 "use client"
 
 import React from "react"

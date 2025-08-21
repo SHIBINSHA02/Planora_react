@@ -117,8 +117,6 @@ const DashboardView = ({
           onAutoAssign={autoAssignTeachers}
           onClearAll={clearAllSchedules}
           onExport={exportData}
-          allowMultiTeacher={allowMultiTeacher}
-          setAllowMultiTeacher={setAllowMultiTeacher}
           className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-300"
         />
       </motion.div>
