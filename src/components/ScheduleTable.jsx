@@ -1,4 +1,3 @@
-// src/components/ScheduleTable.jsx
 "use client"
 
 import React, { useState, useRef, useEffect } from "react"
@@ -389,50 +388,54 @@ const ScheduleTable = ({
 
         <div className="flex items-center space-x-2">
           {isMultiSelect && <span className="text-green-500 text-lg">+</span>}
-          <CustomTeacherDropdown
-            value={cell.teacherId || ""}
-            onChange={handleTeacherChange}
-            teachers={sortedTeachers}
-            rowIndex={rowIndex}
-            colIndex={colIndex}
-          />
+          <div className="flex-1">
+            <CustomTeacherDropdown
+              value={cell.teacherId || ""}
+              onChange={handleTeacherChange}
+              teachers={sortedTeachers}
+              rowIndex={rowIndex}
+              colIndex={colIndex}
+            />
+          </div>
           {isMultiSelect && <span className="text-red-500 text-lg">−</span>}
         </div>
 
         <div className="flex items-center space-x-2">
           {isMultiAssign && <span className="text-green-500 text-lg">+</span>}
-          <select
-            value={cell.subject || ""}
-            onChange={(e) => {
-              const newSubject = e.target.value
-              const currentTeacher = allAvailableTeachers.find((t) => t.id === cell.teacherId)
+          <div className="flex-1">
+            <select
+              value={cell.subject || ""}
+              onChange={(e) => {
+                const newSubject = e.target.value
+                const currentTeacher = allAvailableTeachers.find((t) => t.id === cell.teacherId)
 
-              let teacherId = cell.teacherId
+                let teacherId = cell.teacherId
 
-              if (newSubject) {
-                const canTeach =
-                  !currentTeacher?.subjects ||
-                  currentTeacher.subjects.length === 0 ||
-                  currentTeacher.subjects.includes(newSubject)
+                if (newSubject) {
+                  const canTeach =
+                    !currentTeacher?.subjects ||
+                    currentTeacher.subjects.length === 0 ||
+                    currentTeacher.subjects.includes(newSubject)
 
-                if (!canTeach) {
-                  teacherId = ""
+                  if (!canTeach) {
+                    teacherId = ""
+                  }
+                } else {
+                  teacherId = cell.teacherId || ""
                 }
-              } else {
-                teacherId = cell.teacherId || ""
-              }
 
-              onUpdateSchedule(rowIndex, colIndex, teacherId, newSubject)
-            }}
-            className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">Select Subject</option>
-            {sortedSubjects.map((subject) => (
-              <option key={subject} value={subject}>
-                {subject}
-              </option>
-            ))}
-          </select>
+                onUpdateSchedule(rowIndex, colIndex, teacherId, newSubject)
+              }}
+              className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white"
+            >
+              <option value="">Select Subject</option>
+              {sortedSubjects.map((subject) => (
+                <option key={subject} value={subject}>
+                  {subject}
+                </option>
+              ))}
+            </select>
+          </div>
           {isMultiAssign && <span className="text-red-500 text-lg">−</span>}
         </div>
 
