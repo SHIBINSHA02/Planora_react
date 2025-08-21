@@ -1,7 +1,7 @@
 // src/components/ScheduleTable.jsx
 "use client"
 
-import React from "react"
+import React, { useState } from "react"
 
 const ScheduleTable = ({
   scheduleData,
@@ -14,6 +14,9 @@ const ScheduleTable = ({
   type = "classroom",
   classroom,
 }) => {
+  const [isMultiSelect, setIsMultiSelect] = useState(false)
+  const [isMultiAssign, setIsMultiAssign] = useState(false)
+
   const renderClassroomCell = (cell, rowIndex, colIndex) => {
     const allAvailableTeachers = getTeachersForTimeSlot
       ? getTeachersForTimeSlot(rowIndex, colIndex, classroom?.grade)
@@ -51,7 +54,7 @@ const ScheduleTable = ({
         )}
 
         <div className="flex items-center space-x-2">
-          <span className="text-green-500 text-lg">+</span>
+          {isMultiSelect && <span className="text-green-500 text-lg">+</span>}
           <select
             value={cell.teacherId || ""}
             onChange={(e) => {
@@ -86,11 +89,11 @@ const ScheduleTable = ({
               </option>
             ))}
           </select>
-          <span className="text-red-500 text-lg">−</span>
+          {isMultiSelect && <span className="text-red-500 text-lg">−</span>}
         </div>
 
         <div className="flex items-center space-x-2">
-          <span className="text-green-500 text-lg">+</span>
+          {isMultiAssign && <span className="text-green-500 text-lg">+</span>}
           <select
             value={cell.subject || ""}
             onChange={(e) => {
@@ -120,10 +123,10 @@ const ScheduleTable = ({
             {sortedSubjects.map((subject) => (
               <option key={subject} value={subject}>
                 {subject}
-            </option>
+              </option>
             ))}
           </select>
-          <span className="text-red-500 text-lg">−</span>
+          {isMultiAssign && <span className="text-red-500 text-lg">−</span>}
         </div>
 
         {getTeachersForTimeSlot && (
@@ -157,6 +160,30 @@ const ScheduleTable = ({
 
   return (
     <div className="overflow-x-auto shadow-lg rounded-lg">
+      {type === "classroom" && (
+        <div className="mb-4 flex space-x-4">
+          <button
+            onClick={() => setIsMultiSelect(!isMultiSelect)}
+            className={`px-4 py-2 text-sm font-medium rounded ${
+              isMultiSelect
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+          >
+            {isMultiSelect ? "Disable Multi-Select" : "Enable Multi-Select"}
+          </button>
+          <button
+            onClick={() => setIsMultiAssign(!isMultiAssign)}
+            className={`px-4 py-2 text-sm font-medium rounded ${
+              isMultiAssign
+                ? "bg-blue-600 text-white"
+                : "bg-gray-200 text-gray-700 hover:bg-gray-300"
+            } focus:outline-none focus:ring-1 focus:ring-blue-500`}
+          >
+            {isMultiAssign ? "Disable Multi-Assign" : "Enable Multi-Assign"}
+          </button>
+        </div>
+      )}
       <table className="min-w-full border-collapse border border-gray-300">
         <thead>
           <tr className="bg-gray-100">
