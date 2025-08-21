@@ -1,7 +1,6 @@
-// src/components/ScheduleTable.jsx
 "use client"
 
-import React, { useState } from "react"
+import React, { useState, useRef, useEffect } from "react"
 
 const ScheduleTable = ({
   scheduleData,
@@ -13,9 +12,277 @@ const ScheduleTable = ({
   getTeachersForTimeSlot,
   type = "classroom",
   classroom,
+  schedules = {}, // Added schedules prop to access all classroom schedules
+  classrooms = [], // Added classrooms prop
 }) => {
   const [isMultiSelect, setIsMultiSelect] = useState(false)
   const [isMultiAssign, setIsMultiAssign] = useState(false)
+  const [hoveredTeacher, setHoveredTeacher] = useState(null)
+  const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 })
+  const [openDropdowns, setOpenDropdowns] = useState({}) // Track which dropdowns are open
+
+  // Get teacher's schedule grid (5 days x 6 periods)
+  const getTeacherScheduleGrid = (teacherId) => {
+    const grid = Array(5).fill().map(() => Array(6).fill(false))
+    
+    // Check all classrooms for this teacher's assignments
+    Object.keys(schedules).forEach(classroomId => {
+      const classroomSchedule = schedules[classroomId]
+      if (classroomSchedule) {
+        classroomSchedule.forEach((day, dayIndex) => {
+          day.forEach((period, periodIndex) => {
+            if (period.teacherId === teacherId) {
+              grid[dayIndex][periodIndex] = {
+                isBooked: true,
+                className: classrooms.find(c => c.id === parseInt(classroomId))?.name || 'Unknown',
+                subject: period.subject
+              }
+            }
+          })
+        })
+      }
+    })
+    
+    return grid
+  }
+
+  // Teacher Schedule Grid Component
+  const TeacherScheduleGrid = ({ teacher, position }) => {
+    const scheduleGrid = getTeacherScheduleGrid(teacher.id)
+    
+    return (
+      <div 
+        className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-3 min-w-80 pointer-events-none"
+        style={{
+          left: Math.min(position.x + 10, window.innerWidth - 320),
+          top: Math.max(position.y - 50, 10),
+          maxHeight: '400px',
+          overflowY: 'auto'
+        }}
+        onMouseEnter={() => {
+          // Keep the grid visible when hovering over it
+        }}
+        onMouseLeave={() => {
+          setHoveredTeacher(null)
+        }}
+      >
+        <div className="mb-2">
+          <h4 className="font-semibold text-sm text-gray-800">{teacher.name}'s Schedule</h4>
+          <p className="text-xs text-gray-600">
+            Subjects: {teacher.subjects?.join(', ') || 'All subjects'}
+          </p>
+        </div>
+        
+        <div className="grid grid-cols-7 gap-1 text-xs">
+          {/* Header */}
+          <div className="font-semibold text-gray-700 text-center py-1">Day/Period</div>
+          {periods.map((period, idx) => (
+            <div key={idx} className="font-semibold text-gray-700 text-center p-1 bg-gray-50 rounded">
+              P{idx + 1}
+            </div>
+          ))}
+          
+          {/* Schedule Grid */}
+          {days.map((day, dayIndex) => (
+            <React.Fragment key={dayIndex}>
+              <div className="font-semibold text-gray-700 text-center p-1 bg-gray-100 rounded">
+                {day.slice(0, 3)}
+              </div>
+              {periods.map((_, periodIndex) => {
+                const slot = scheduleGrid[dayIndex][periodIndex]
+                return (
+                  <div
+                    key={`${dayIndex}-${periodIndex}`}
+                    className={`
+                      h-8 w-8 rounded border text-center flex items-center justify-center cursor-help
+                      ${slot.isBooked 
+                        ? 'bg-red-500 text-white border-red-600 shadow-sm' 
+                        : 'bg-green-100 text-green-800 border-green-300'
+                      }
+                    `}
+                    title={slot.isBooked 
+                      ? `Busy: ${slot.className} - ${slot.subject}` 
+                      : 'Available'
+                    }
+                  >
+                    {slot.isBooked ? '✕' : '✓'}
+                  </div>
+                )
+              })}
+            </React.Fragment>
+          ))}
+        </div>
+        
+        <div className="mt-3 flex items-center gap-4 text-xs border-t pt-2">
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
+            <span className="text-gray-600">Available</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <div className="w-3 h-3 bg-red-500 rounded"></div>
+            <span className="text-gray-600">Occupied</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Custom Dropdown Component
+  const CustomTeacherDropdown = ({ value, onChange, teachers, rowIndex, colIndex }) => {
+    const [isOpen, setIsOpen] = useState(false)
+    const dropdownRef = useRef(null)
+    const hoverTimeoutRef = useRef(null)
+    const hideTimeoutRef = useRef(null)
+    const [isSelecting, setIsSelecting] = useState(false)
+
+    useEffect(() => {
+      const handleClickOutside = (event) => {
+        if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+          setIsOpen(false)
+          setHoveredTeacher(null)
+          setIsSelecting(false)
+          if (hoverTimeoutRef.current) {
+            clearTimeout(hoverTimeoutRef.current)
+          }
+          if (hideTimeoutRef.current) {
+            clearTimeout(hideTimeoutRef.current)
+          }
+        }
+      }
+
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside)
+        if (hoverTimeoutRef.current) {
+          clearTimeout(hoverTimeoutRef.current)
+        }
+        if (hideTimeoutRef.current) {
+          clearTimeout(hideTimeoutRef.current)
+        }
+      }
+    }, [])
+
+    const selectedTeacher = teachers.find(t => t.id == value)
+
+    const handleTeacherHover = (teacher, event) => {
+      if (isSelecting) return // Don't show grid if user is actively selecting
+      
+      // Clear any existing timeouts
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
+      }
+      
+      // Add a delay before showing the grid
+      hoverTimeoutRef.current = setTimeout(() => {
+        if (!isSelecting) { // Double check we're not selecting
+          const rect = event.target.getBoundingClientRect()
+          setHoveredTeacher(teacher)
+          setHoverPosition({ x: rect.right, y: rect.top })
+        }
+      }, 500) // Increased delay to 500ms
+    }
+
+    const handleTeacherLeave = () => {
+      // Clear hover timeout
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+      
+      // Add a delay before hiding
+      hideTimeoutRef.current = setTimeout(() => {
+        if (!isSelecting) {
+          setHoveredTeacher(null)
+        }
+      }, 200)
+    }
+
+    const handleSelect = (teacherId) => {
+      setIsSelecting(true)
+      
+      // Clear all timeouts and hide grid immediately
+      if (hoverTimeoutRef.current) {
+        clearTimeout(hoverTimeoutRef.current)
+      }
+      if (hideTimeoutRef.current) {
+        clearTimeout(hideTimeoutRef.current)
+      }
+      setHoveredTeacher(null)
+      
+      // Update the selection
+      onChange(teacherId)
+      setIsOpen(false)
+      
+      // Reset selecting state after a brief delay
+      setTimeout(() => {
+        setIsSelecting(false)
+      }, 100)
+    }
+
+    const handleDropdownToggle = (e) => {
+      e.preventDefault()
+      e.stopPropagation()
+      setIsSelecting(false)
+      setIsOpen(!isOpen)
+      if (!isOpen) {
+        // Clear any existing hover state when opening
+        setHoveredTeacher(null)
+      }
+    }
+
+    return (
+      <div className="relative" ref={dropdownRef}>
+        <button
+          onClick={handleDropdownToggle}
+          onMouseDown={(e) => e.preventDefault()} // Prevent focus issues
+          className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500 bg-white text-left flex justify-between items-center"
+        >
+          <span className="truncate">
+            {selectedTeacher ? selectedTeacher.name : 'Select Teacher'}
+          </span>
+          <span className={`transform transition-transform ${isOpen ? 'rotate-180' : ''}`}>
+            ▼
+          </span>
+        </button>
+        
+        {isOpen && (
+          <div className="absolute z-40 w-full mt-1 bg-white border border-gray-200 rounded shadow-lg max-h-40 overflow-y-auto">
+            <div
+              className="px-2 py-1 text-xs hover:bg-gray-100 cursor-pointer"
+              onClick={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                handleSelect('')
+              }}
+            >
+              Select Teacher
+            </div>
+            {teachers.map((teacher) => (
+              <div
+                key={teacher.id}
+                className="px-2 py-1 text-xs hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 relative"
+                onClick={(e) => {
+                  e.preventDefault()
+                  e.stopPropagation()
+                  handleSelect(teacher.id)
+                }}
+                onMouseDown={(e) => e.preventDefault()} // Prevent focus issues
+                onMouseEnter={(e) => handleTeacherHover(teacher, e)}
+                onMouseLeave={handleTeacherLeave}
+              >
+                <div className="font-medium">{teacher.name}</div>
+                <div className="text-gray-500 text-xs">
+                  {teacher.subjects?.join(', ') || 'All subjects'}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
 
   const renderClassroomCell = (cell, rowIndex, colIndex) => {
     const allAvailableTeachers = getTeachersForTimeSlot
@@ -42,6 +309,28 @@ const ScheduleTable = ({
       onUpdateSchedule(rowIndex, colIndex, "", "")
     }
 
+    const handleTeacherChange = (newTeacherId) => {
+      const newTeacher = allAvailableTeachers.find((t) => t.id == newTeacherId)
+      let subject = cell.subject
+
+      if (newTeacherId) {
+        if (subject) {
+          const canTeach =
+            !newTeacher?.subjects ||
+            newTeacher.subjects.length === 0 ||
+            newTeacher.subjects.includes(subject)
+
+          if (!canTeach) {
+            subject = ""
+          }
+        }
+      } else {
+        subject = cell.subject || ""
+      }
+
+      onUpdateSchedule(rowIndex, colIndex, newTeacherId, subject)
+    }
+
     return (
       <div className="space-y-1">
         {(cell.teacherId || cell.subject) && (
@@ -55,40 +344,13 @@ const ScheduleTable = ({
 
         <div className="flex items-center space-x-2">
           {isMultiSelect && <span className="text-green-500 text-lg">+</span>}
-          <select
+          <CustomTeacherDropdown
             value={cell.teacherId || ""}
-            onChange={(e) => {
-              const newTeacherId = e.target.value
-              const newTeacher = allAvailableTeachers.find((t) => t.id === newTeacherId)
-
-              let subject = cell.subject
-
-              if (newTeacherId) {
-                if (subject) {
-                  const canTeach =
-                    !newTeacher?.subjects ||
-                    newTeacher.subjects.length === 0 ||
-                    newTeacher.subjects.includes(subject)
-
-                  if (!canTeach) {
-                    subject = ""
-                  }
-                }
-              } else {
-                subject = cell.subject || ""
-              }
-
-              onUpdateSchedule(rowIndex, colIndex, newTeacherId, subject)
-            }}
-            className="w-full px-2 py-1 text-xs border border-gray-200 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="">Select Teacher</option>
-            {sortedTeachers.map((teacher) => (
-              <option key={teacher.id} value={teacher.id}>
-                {teacher.name}
-              </option>
-            ))}
-          </select>
+            onChange={handleTeacherChange}
+            teachers={sortedTeachers}
+            rowIndex={rowIndex}
+            colIndex={colIndex}
+          />
           {isMultiSelect && <span className="text-red-500 text-lg">−</span>}
         </div>
 
@@ -159,7 +421,7 @@ const ScheduleTable = ({
   }
 
   return (
-    <div className="overflow-x-auto shadow-lg rounded-lg">
+    <div className="overflow-x-auto shadow-lg rounded-lg relative">
       {type === "classroom" && (
         <div className="mb-4 flex space-x-4">
           <button
@@ -184,6 +446,7 @@ const ScheduleTable = ({
           </button>
         </div>
       )}
+      
       <table className="min-w-full border-collapse border border-gray-300">
         <thead>
           <tr className="bg-gray-100">
@@ -211,6 +474,14 @@ const ScheduleTable = ({
             ))}
         </tbody>
       </table>
+
+      {/* Teacher Schedule Grid Overlay */}
+      {hoveredTeacher && (
+        <TeacherScheduleGrid 
+          teacher={hoveredTeacher} 
+          position={hoverPosition}
+        />
+      )}
     </div>
   )
 }
