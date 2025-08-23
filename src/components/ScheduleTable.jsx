@@ -11,74 +11,48 @@ const ScheduleTable = ({
   subjects = [],
   onUpdateSchedule,
   getTeachersForTimeSlot,
+  getTeacherTimetable, // Add this prop from useScheduleData hook
   type = "classroom",
   classroom,
-  schedules = {}, // Added schedules prop to access all classroom schedules
-  classrooms = [], // Added classrooms prop
 }) => {
   const [isMultiSelect, setIsMultiSelect] = useState(false)
   const [isMultiAssign, setIsMultiAssign] = useState(false)
   const [hoveredTeacher, setHoveredTeacher] = useState(null)
   const [hoverPosition, setHoverPosition] = useState({ x: 0, y: 0 })
-  const [openDropdowns, setOpenDropdowns] = useState({}) // Track which dropdowns are open
-
-  // Get teacher's availability for the current time slot across all periods
-  const getTeacherAvailabilityGrid = (teacherId, currentDayIndex, currentPeriodIndex) => {
-    const grid = Array(days.length).fill().map(() => Array(periods.length).fill(false))
-    
-    // Convert teacherId to number for comparison if it's a string
-    const targetTeacherId = typeof teacherId === 'string' ? parseInt(teacherId) : teacherId
-    
-    // Check availability for each time slot across all classrooms
-    for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
-      for (let periodIndex = 0; periodIndex < periods.length; periodIndex++) {
-        let isAvailable = true
-        let assignedToClassroom = null
-        let assignedSubject = null
-        
-        // Check all classrooms for this specific time slot
-        Object.keys(schedules).forEach(classroomId => {
-          const classroomSchedule = schedules[classroomId]
-          if (classroomSchedule && Array.isArray(classroomSchedule)) {
-            const daySchedule = classroomSchedule[dayIndex]
-            if (Array.isArray(daySchedule)) {
-              const period = daySchedule[periodIndex]
-              if (period) {
-                const periodTeacherId = period?.teacherId || period?.teacher_id || null
-                const periodTeacherIdNum = typeof periodTeacherId === 'string' ? parseInt(periodTeacherId) : periodTeacherId
-                
-                if (periodTeacherIdNum === targetTeacherId && periodTeacherIdNum !== null && !isNaN(periodTeacherIdNum)) {
-                  isAvailable = false
-                  assignedToClassroom = classrooms.find(c => c.id === parseInt(classroomId))?.name || `Classroom ${classroomId}`
-                  assignedSubject = period.subject || 'Unknown Subject'
-                }
-              }
-            }
-          }
-        })
-        
-        grid[dayIndex][periodIndex] = {
-          isBooked: !isAvailable,
-          className: assignedToClassroom,
-          subject: assignedSubject,
-          isCurrentSlot: dayIndex === currentDayIndex && periodIndex === currentPeriodIndex
-        }
-      }
-    }
-    
-    return grid
-  }
 
   // Teacher Schedule Grid Component
-  const TeacherScheduleGrid = ({ teacher, position, currentDayIndex, currentPeriodIndex }) => {
-    const scheduleGrid = getTeacherAvailabilityGrid(teacher.id, currentDayIndex, currentPeriodIndex)
+  const TeacherScheduleGrid = ({ 
+    teacher, 
+    position, 
+    currentDayIndex, 
+    currentPeriodIndex,
+    setHoveredTeacher
+  }) => {
     
-    // Debug: Count total assignments for this teacher
-    const totalAssignments = scheduleGrid.flat().filter(slot => slot.isBooked).length
+    // Get teacher's timetable using the hook function
+    const teacherTimetable = getTeacherTimetable ? getTeacherTimetable(teacher.id) : [];
+    
+    // Convert timetable to grid format with current slot highlighting
+    const scheduleGrid = teacherTimetable.map((daySchedule, dayIndex) => 
+      daySchedule.map((periodSlot, periodIndex) => ({
+        isBooked: periodSlot !== null,
+        isCurrentSlot: dayIndex === currentDayIndex && periodIndex === currentPeriodIndex,
+        className: periodSlot?.classroom || null,
+        subject: periodSlot?.subject || null,
+        grade: periodSlot?.grade || null,
+        division: periodSlot?.division || null
+      }))
+    );
+    
+    // Count total assignments for this teacher
+    const totalAssignments = scheduleGrid.flat().filter(slot => slot.isBooked).length;
+    
+    // Get current slot status
+    const currentSlot = scheduleGrid[currentDayIndex]?.[currentPeriodIndex];
     
     return (
       <div 
-        className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-3 min-w-80 pointer-events-none"
+        className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-xl p-3 min-w-80 pointer-events-auto"
         style={{
           left: Math.min(position.x + 10, window.innerWidth - 320),
           top: Math.max(position.y - 50, 10),
@@ -89,68 +63,89 @@ const ScheduleTable = ({
           // Keep the grid visible when hovering over it
         }}
         onMouseLeave={() => {
-          setHoveredTeacher(null)
+          if (setHoveredTeacher) {
+            setHoveredTeacher(null);
+          }
         }}
       >
         <div className="mb-2">
-          <h4 className="font-semibold text-sm text-gray-800">{teacher.name}'s Weekly Availability</h4>
+          <h4 className="font-semibold text-sm text-gray-800">{teacher.name}'s Weekly Schedule</h4>
           <p className="text-xs text-gray-600">
-            Subjects: {teacher.subjects?.join(', ') || 'All subjects'}
+            Subjects: {teacher.subjects?.length > 0 ? teacher.subjects.join(', ') : 'All subjects'}
+          </p>
+          <p className="text-xs text-gray-600">
+            Classes: {teacher.classes?.length > 0 ? teacher.classes.join(', ') : 'All classes'}
           </p>
           <p className="text-xs text-blue-600">
-            Current slot: {days[currentDayIndex]} - Period {currentPeriodIndex + 1}
+            Current slot: {days[currentDayIndex]} - {periods[currentPeriodIndex]}
+            {currentSlot?.isBooked && (
+              <span className="ml-1 text-red-600">
+                (Teaching {currentSlot.className} - {currentSlot.subject})
+              </span>
+            )}
           </p>
           <p className="text-xs text-red-600">
-            Total occupied slots: {totalAssignments}
+            Total occupied slots: {totalAssignments}/30
           </p>
         </div>
         
-        <div className="grid grid-cols-7 gap-1 text-xs">
-          {/* Header */}
-          <div className="font-semibold text-gray-700 text-center py-1">Day/Period</div>
-          {periods.map((period, idx) => (
-            <div key={idx} className="font-semibold text-gray-700 text-center p-1 bg-gray-50 rounded">
-              P{idx + 1}
+        <div className="overflow-x-auto">
+          <div className="grid grid-cols-7 gap-1 text-xs min-w-fit">
+            {/* Header */}
+            <div className="font-semibold text-gray-700 text-center py-1 sticky left-0 bg-white min-w-16">
+              Day/Period
             </div>
-          ))}
-          
-          {/* Schedule Grid */}
-          {days.map((day, dayIndex) => (
-            <React.Fragment key={dayIndex}>
-              <div className="font-semibold text-gray-700 text-center p-1 bg-gray-100 rounded">
-                {day.slice(0, 3)}
+            {periods.map((period, idx) => (
+              <div key={idx} className="font-semibold text-gray-700 text-center p-1 bg-gray-50 rounded min-w-12">
+                P{idx + 1}
               </div>
-              {periods.map((_, periodIndex) => {
-                const slot = scheduleGrid[dayIndex][periodIndex]
-                return (
-                  <div
-                    key={`${dayIndex}-${periodIndex}`}
-                    className={`
-                      h-8 w-8 rounded border text-center flex items-center justify-center cursor-help relative
-                      ${slot.isCurrentSlot 
-                        ? 'bg-blue-500 text-white border-blue-600 shadow-lg ring-2 ring-blue-300' 
-                        : slot.isBooked 
-                          ? 'bg-red-500 text-white border-red-600 shadow-sm' 
-                          : 'bg-green-100 text-green-800 border-green-300'
+            ))}
+            
+            {/* Schedule Grid */}
+            {days.map((day, dayIndex) => (
+              <React.Fragment key={dayIndex}>
+                <div className="font-semibold text-gray-700 text-center p-1 bg-gray-100 rounded sticky left-0 min-w-16">
+                  {day.slice(0, 3)}
+                </div>
+                {periods.map((_, periodIndex) => {
+                  const slot = scheduleGrid[dayIndex]?.[periodIndex] || { isBooked: false, isCurrentSlot: dayIndex === currentDayIndex && periodIndex === currentPeriodIndex };
+                  return (
+                    <div
+                      key={`${dayIndex}-${periodIndex}`}
+                      className={`
+                        h-12 min-w-12 rounded border text-center flex flex-col items-center justify-center cursor-help relative transition-all duration-200 hover:scale-105
+                        ${slot.isCurrentSlot 
+                          ? 'bg-blue-500 text-white border-blue-600 shadow-lg ring-2 ring-blue-300' 
+                          : slot.isBooked 
+                            ? 'bg-red-500 text-white border-red-600 shadow-sm hover:bg-red-600' 
+                            : 'bg-green-100 text-green-800 border-green-300 hover:bg-green-200'
+                        }
+                      `}
+                      title={
+                        slot.isCurrentSlot
+                          ? `Current slot: ${days[dayIndex]} ${periods[periodIndex]}${slot.isBooked ? ` - Teaching: ${slot.className} - ${slot.subject}` : ' - Available'}`
+                          : slot.isBooked 
+                            ? `Teaching: ${slot.className} - ${slot.subject} (${slot.grade}-${slot.division})` 
+                            : `Available: ${days[dayIndex]} ${periods[periodIndex]}`
                       }
-                    `}
-                    title={
-                      slot.isCurrentSlot
-                        ? `Current slot: ${days[dayIndex]} Period ${periodIndex + 1}${slot.isBooked ? ` - Busy: ${slot.className} - ${slot.subject}` : ' - Available'}`
-                        : slot.isBooked 
-                          ? `Busy: ${slot.className} - ${slot.subject}` 
-                          : 'Available'
-                    }
-                  >
-                    {slot.isCurrentSlot ? '●' : slot.isBooked ? '✕' : '✓'}
-                    {slot.isCurrentSlot && (
-                      <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full"></div>
-                    )}
-                  </div>
-                )
-              })}
-            </React.Fragment>
-          ))}
+                    >
+                      <div className="text-xs font-semibold">
+                        {slot.isCurrentSlot ? '●' : slot.isBooked ? '✕' : '✓'}
+                      </div>
+                      {slot.isBooked && (
+                        <div className="text-xs mt-0.5 opacity-90 leading-tight">
+                          <div>{slot.grade}-{slot.division}</div>
+                        </div>
+                      )}
+                      {slot.isCurrentSlot && (
+                        <div className="absolute -top-1 -right-1 w-2 h-2 bg-yellow-400 rounded-full animate-pulse"></div>
+                      )}
+                    </div>
+                  );
+                })}
+              </React.Fragment>
+            ))}
+          </div>
         </div>
         
         <div className="mt-3 flex items-center gap-3 text-xs border-t pt-2 flex-wrap">
@@ -160,7 +155,7 @@ const ScheduleTable = ({
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span className="text-gray-600">Occupied</span>
+            <span className="text-gray-600">Teaching</span>
           </div>
           <div className="flex items-center gap-1">
             <div className="w-3 h-3 bg-blue-500 rounded relative">
@@ -169,9 +164,60 @@ const ScheduleTable = ({
             <span className="text-gray-600">Current slot</span>
           </div>
         </div>
+        
+        {/* Show detailed schedule if teacher has assignments */}
+        {totalAssignments > 0 && (
+          <div className="mt-3 border-t pt-2">
+            <h5 className="font-semibold text-xs text-gray-700 mb-2">Current Assignments:</h5>
+            <div className="max-h-32 overflow-y-auto space-y-1">
+              {scheduleGrid.flat()
+                .filter(slot => slot.isBooked)
+                .map((slot, index) => {
+                  const dayIndex = Math.floor(index / periods.length);
+                  const periodIndex = index % periods.length;
+                  return (
+                    <div key={index} className="text-xs bg-gray-50 p-1 rounded">
+                      <div className="font-medium text-gray-800">
+                        {slot.className} - {slot.subject}
+                      </div>
+                      <div className="text-gray-600">
+                        {days[dayIndex]} • {periods[periodIndex]}
+                      </div>
+                    </div>
+                  );
+                })
+              }
+            </div>
+          </div>
+        )}
+
+        {/* Show workload analysis */}
+        <div className="mt-3 border-t pt-2">
+          <div className="flex justify-between items-center text-xs">
+            <span className="text-gray-600">Workload:</span>
+            <span className={`font-semibold ${
+              totalAssignments > 20 ? 'text-red-600' : 
+              totalAssignments > 15 ? 'text-yellow-600' : 
+              'text-green-600'
+            }`}>
+              {((totalAssignments / 30) * 100).toFixed(0)}%
+            </span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
+            <div 
+              className={`h-2 rounded-full transition-all duration-300 ${
+                totalAssignments > 20 ? 'bg-red-500' : 
+                totalAssignments > 15 ? 'bg-yellow-500' : 
+                'bg-green-500'
+              }`}
+              style={{ width: `${(totalAssignments / 30) * 100}%` }}
+            ></div>
+          </div>
+        </div>
       </div>
-    )
-  }
+    );
+  };
+
   // Custom Dropdown Component
   const CustomTeacherDropdown = ({ value, onChange, teachers, rowIndex, colIndex }) => {
     const [isOpen, setIsOpen] = useState(false)
@@ -330,15 +376,12 @@ const ScheduleTable = ({
   }
 
   const renderClassroomCell = (cell, rowIndex, colIndex) => {
+    // Always show all available teachers (no subject-based filtering for teacher dropdown)
     const allAvailableTeachers = getTeachersForTimeSlot
       ? getTeachersForTimeSlot(rowIndex, colIndex, classroom?.grade)
       : teachers
 
-    const availableTeachers = cell.subject
-      ? allAvailableTeachers.filter(
-          (teacher) => !teacher.subjects || teacher.subjects.length === 0 || teacher.subjects.includes(cell.subject),
-        )
-      : allAvailableTeachers
+    const availableTeachers = allAvailableTeachers
 
     const availableSubjects = cell.teacherId
       ? subjects.filter((subject) => {
@@ -522,11 +565,12 @@ const ScheduleTable = ({
 
       {/* Teacher Schedule Grid Overlay */}
       {hoveredTeacher && (
-        <TeacherScheduleGrid 
-          teacher={hoveredTeacher} 
+        <TeacherScheduleGrid
+          teacher={hoveredTeacher}
           position={hoverPosition}
           currentDayIndex={hoveredTeacher.currentDayIndex}
           currentPeriodIndex={hoveredTeacher.currentPeriodIndex}
+          setHoveredTeacher={setHoveredTeacher}
         />
       )}
     </div>
