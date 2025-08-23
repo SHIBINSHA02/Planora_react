@@ -199,7 +199,10 @@ const ClassroomScheduleView = ({
                 Available Teachers
               </h3>
               <div className="text-xs text-green-600">
-                {teachers.filter(t => t.classes.includes(currentClassroom?.grade)).length} teachers 
+                {Array.isArray(teachers) 
+  ? teachers.filter(t => t.classes.includes(currentClassroom?.grade)).length 
+  : 0} teachers can teach this class
+
                 can teach this class
               </div>
               {stats && Object.keys(stats.teacherCount).length > 0 && (
