@@ -2,6 +2,8 @@
 import { useState } from 'react';
 
 export const useScheduleData = () => {
+
+
   // Define class-specific subjects
   const classSubjects = {
     'S1': ['Mathematics', 'English', 'Science', 'Social Studies', 'Malayalam'],

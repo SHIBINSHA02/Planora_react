@@ -56,6 +56,7 @@ const TeacherScheduleSystem = () => {
               autoAssignTeachers={autoAssignTeachers}
               clearAllSchedules={clearAllSchedules}
               exportData={exportData}
+            
             />
           </ErrorBoundary>
         )}

@@ -14,7 +14,9 @@ const DashboardView = ({
   addClassroom,
   autoAssignTeachers,
   clearAllSchedules,
-  exportData
+  exportData,
+  allowMultiTeacher,
+  setAllowMultiTeacher
 }) => {
   // Animation variants for smooth entrance
   const containerVariants = {
