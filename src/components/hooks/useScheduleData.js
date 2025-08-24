@@ -105,8 +105,6 @@ const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) 
     
     return timetable;
   };
-
-  // Check if a teacher is available at a specific time slot
   const isTeacherAvailable = (teacherId, dayIndex, periodIndex, excludeClassroomId = null) => {
     for (const classroomId of Object.keys(schedules)) {
       if (excludeClassroomId && parseInt(classroomId) === excludeClassroomId) {
@@ -124,7 +122,6 @@ const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) 
     return true;
   };
 
-  // Auto-assign teachers with improved algorithm considering class-subject constraints
   const autoAssignTeachers = () => {
     const newSchedules = { ...schedules };
     

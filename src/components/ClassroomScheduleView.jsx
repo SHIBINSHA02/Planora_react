@@ -18,20 +18,17 @@ const ClassroomScheduleView = ({
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const periods = ['Period 1', 'Period 2', 'Period 3', 'Period 4', 'Period 5', 'Period 6'];
 
-  // Get current classroom details
   const getCurrentClassroom = () => {
     if (!selectedClassroom) return null;
     return classrooms.find(c => c.id === parseInt(selectedClassroom));
   };
 
-  // Get subjects available for the selected classroom
   const getAvailableSubjects = () => {
     const classroom = getCurrentClassroom();
     if (!classroom) return [];
     return getSubjectsForClass(classroom.grade);
   };
 
-  // Function to get available teachers for a specific time slot and classroom
   const getTeachersForTimeSlot = (dayIndex, periodIndex, selectedSubject = null) => {
     if (!selectedClassroom) return [];
     
@@ -42,16 +39,12 @@ const ClassroomScheduleView = ({
       selectedSubject
     );
   };
-
-  // Function to get teachers who can teach a specific subject to current classroom
   const getTeachersForCurrentClassSubject = (subject) => {
     const classroom = getCurrentClassroom();
     if (!classroom) return [];
     
     return getTeachersForSubject(classroom.grade, subject);
   };
-
-  // Function to validate teacher assignment
   const validateTeacherAssignment = (dayIndex, periodIndex, teacherId, subject) => {
     if (!selectedClassroom || !teacherId) return true;
     
