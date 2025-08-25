@@ -3,167 +3,248 @@ import { useState } from 'react';
 import classSubjects from '../data/classSubjects';
 import { teacher } from '../data/teacher';
 import { classes } from '../data/classes';
-import { addTeacherUtil,getAvailableTeachersUtil ,getTeachersForSubjectUtil } from '../utils/teacher';
-import { addClassroomUtil } from '../utils/classroom';
+import { addTeacherUtil, getAvailableTeachersUtil, getTeachersForSubjectUtil, getWorkloadSummary, getTeacherWorkload } from '../utils/teacher';
+import { addClassroomUtil, getClassroomStats, getAllClassroomsStats, removeClassroomUtil, validateClassroomData } from '../utils/classroom';
+
 export const useScheduleData = () => {
   const [teachers, setTeachers] = useState(teacher);
   const [classrooms, setClassrooms] = useState(classes);
+
   const getSubjectsForClass = (grade) => {
     return classSubjects[grade] || [];
   };
-  const [schedules, setSchedules] = useState(() => {
-    const initialSchedules = {};
+
+  const [classSchedules, setclassSchedules] = useState(() => {
+    const initialClassroomSchedules = {};
     const initialClassrooms = classes;
     
     initialClassrooms.forEach(classroom => {
-      initialSchedules[classroom.id] = Array(5).fill().map(() => 
+      initialClassroomSchedules[classroom.id] = Array(5).fill().map(() => 
         Array(6).fill({ teacher: '', subject: '', teacherId: null })
       );
     });
-    return initialSchedules;
+    return initialClassroomSchedules;
   });
 
-const addTeacher = (teacherData) => {
-  return addTeacherUtil(teachers, setTeachers, teacherData);
-};
-
-const addClassroom = (classroomData) => {
-  return addClassroomUtil(classrooms, setClassrooms, schedules, setSchedules, classroomData);
-};
-
-
- 
-const getAvailableTeachers = (classroomId, dayIndex, periodIndex, subject) =>
-  getAvailableTeachersUtil(teachers, classrooms, schedules, classroomId, dayIndex, periodIndex, subject);
-
-const getTeachersForSubject = (grade, subject) => getTeachersForSubjectUtil(teachers, grade, subject);
-
-
-const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) => {
-  const teacher = teachers.find(t => t.id === parseInt(teacherId));
-  const classroom = classrooms.find(c => c.id === classroomId);
-  
-  // Validate only if subject is selected
-  if (teacher && classroom) {
-    if (subject) {
-      if (!teacher.subjects.includes(subject)) {
-        console.warn(`Teacher ${teacher.name} cannot teach ${subject}`);
-        return false;
-      }
-    }
-    if (!teacher.classes.includes(classroom.grade)) {
-      console.warn(`Teacher ${teacher.name} cannot teach class ${classroom.grade}`);
-      return false;
-    }
-  }
-
-  setSchedules(prev => {
-    const newSchedules = { ...prev };
-    newSchedules[classroomId] = newSchedules[classroomId].map((day, dIdx) =>
-      day.map((period, pIdx) => 
-        dIdx === dayIndex && pIdx === periodIndex 
-          ? { 
-              teacher: teacher ? teacher.name : '', 
-              subject, 
-              teacherId: teacherId ? parseInt(teacherId) : null 
-            }
-          : period
-      )
-    );
-    return newSchedules;
-  });
-  return true;
-};
-
-  const clearAllSchedules = () => {
-    const clearedSchedules = {};
-    classrooms.forEach(classroom => {
-      clearedSchedules[classroom.id] = Array(5).fill().map(() => 
-        Array(6).fill({ teacher: '', subject: '', teacherId: null })
+  const [teacherSchedules, setTeacherSchedules] = useState(() => {
+    const initialTeacherSchedules = {};
+    
+    teachers.forEach(teacher => {
+      initialTeacherSchedules[teacher.id] = Array(5).fill().map(() => 
+        Array(6).fill({ classroomId: null, subject: null, classroomName: null, grade: null })
       );
     });
-    setSchedules(clearedSchedules);
+    return initialTeacherSchedules;
+  });
+
+  const addTeacher = (teacherData) => {
+    const result = addTeacherUtil(teachers, setTeachers, teacherData);
+    
+    // Add new teacher to teacherSchedules when a teacher is added
+    if (result && result.success) {
+      setTeacherSchedules(prev => ({
+        ...prev,
+        [result.teacher.id]: Array(5).fill().map(() => 
+          Array(6).fill({ classroomId: null, subject: null, classroomName: null, grade: null })
+        )
+      }));
+    }
+    
+    return result;
   };
 
-  const getTeacherTimetable = (teacherId) => {
-    const timetable = Array(5).fill().map(() => Array(6).fill(null));
-    
-    classrooms.forEach(classroom => {
-      schedules[classroom.id].forEach((day, dayIndex) => {
-        day.forEach((period, periodIndex) => {
-          if (period.teacherId === teacherId) {
-            timetable[dayIndex][periodIndex] = {
-              classroom: classroom.name,
-              subject: period.subject,
-              grade: classroom.grade,
-              division: classroom.division
+  const addClassroom = (classroomData) => {
+    return addClassroomUtil(classrooms, setClassrooms, classSchedules, setclassSchedules, classroomData, teacherSchedules, setTeacherSchedules);
+  };
+
+  const getAvailableTeachers = (classroomId, dayIndex, periodIndex, subject) =>
+    getAvailableTeachersUtil(teachers, classrooms, classSchedules, classroomId, dayIndex, periodIndex, subject, teacherSchedules);
+
+  const getTeachersForSubject = (grade, subject) => getTeachersForSubjectUtil(teachers, grade, subject);
+
+  // Utility function to sync both schedules
+  const syncSchedules = (classroomId, dayIndex, periodIndex, teacherId, subject, teacher, classroom) => {
+    // Update class schedule
+    setclassSchedules(prev => {
+      const newSchedules = { ...prev };
+      newSchedules[classroomId] = newSchedules[classroomId].map((day, dIdx) =>
+        day.map((period, pIdx) => 
+          dIdx === dayIndex && pIdx === periodIndex 
+            ? { 
+                teacher: teacher ? teacher.name : '', 
+                subject, 
+                teacherId: teacherId ? parseInt(teacherId) : null 
+              }
+            : period
+        )
+      );
+      return newSchedules;
+    });
+
+    // Update teacher schedule
+    setTeacherSchedules(prev => {
+      const newTeacherSchedules = { ...prev };
+      
+      // Clear previous assignment if updating existing slot
+      Object.keys(newTeacherSchedules).forEach(tId => {
+        if (newTeacherSchedules[tId][dayIndex] && newTeacherSchedules[tId][dayIndex][periodIndex]) {
+          const currentAssignment = newTeacherSchedules[tId][dayIndex][periodIndex];
+          if (currentAssignment.classroomId === classroomId) {
+            newTeacherSchedules[tId][dayIndex][periodIndex] = { 
+              classroomId: null, 
+              subject: null, 
+              classroomName: null, 
+              grade: null 
             };
           }
-        });
+        }
       });
-    });
-    
-    return timetable;
-  };
-  const isTeacherAvailable = (teacherId, dayIndex, periodIndex, excludeClassroomId = null) => {
-    for (const classroomId of Object.keys(schedules)) {
-      if (excludeClassroomId && parseInt(classroomId) === excludeClassroomId) {
-        continue;
+
+      // Add new assignment if teacher is selected
+      if (teacherId && teacher && classroom) {
+        if (!newTeacherSchedules[teacherId]) {
+          newTeacherSchedules[teacherId] = Array(5).fill().map(() => 
+            Array(6).fill({ classroomId: null, subject: null, classroomName: null, grade: null })
+          );
+        }
+        newTeacherSchedules[teacherId][dayIndex][periodIndex] = {
+          classroomId: parseInt(classroomId),
+          subject,
+          classroomName: classroom.name,
+          grade: classroom.grade
+        };
       }
-      
-      const classroomSchedule = schedules[classroomId];
-      if (classroomSchedule[dayIndex] && classroomSchedule[dayIndex][periodIndex]) {
-        const period = classroomSchedule[dayIndex][periodIndex];
-        if (period.teacherId === teacherId) {
+
+      return newTeacherSchedules;
+    });
+  };
+
+  const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) => {
+    const teacher = teachers.find(t => t.id === parseInt(teacherId));
+    const classroom = classrooms.find(c => c.id === classroomId);
+    
+    // Validate only if subject is selected
+    if (teacher && classroom) {
+      if (subject) {
+        if (!teacher.subjects.includes(subject)) {
+          console.warn(`Teacher ${teacher.name} cannot teach ${subject}`);
           return false;
         }
       }
+      if (!teacher.classes.includes(classroom.grade)) {
+        console.warn(`Teacher ${teacher.name} cannot teach class ${classroom.grade}`);
+        return false;
+      }
     }
+
+    // Sync both schedules
+    syncSchedules(classroomId, dayIndex, periodIndex, teacherId, subject, teacher, classroom);
     return true;
   };
 
-  const autoAssignTeachers = () => {
-    const newSchedules = { ...schedules };
+  const clearAllSchedules = () => {
+    const clearedClassSchedules = {};
+    const clearedTeacherSchedules = {};
     
     classrooms.forEach(classroom => {
-      const schedule = newSchedules[classroom.id];
+      clearedClassSchedules[classroom.id] = Array(5).fill().map(() => 
+        Array(6).fill({ teacher: '', subject: '', teacherId: null })
+      );
+    });
+
+    teachers.forEach(teacher => {
+      clearedTeacherSchedules[teacher.id] = Array(5).fill().map(() => 
+        Array(6).fill({ classroomId: null, subject: null, classroomName: null, grade: null })
+      );
+    });
+
+    setclassSchedules(clearedClassSchedules);
+    setTeacherSchedules(clearedTeacherSchedules);
+  };
+
+  // Simplified function using teacherSchedules
+  const getTeacherTimetable = (teacherId) => {
+    if (!teacherSchedules[teacherId]) {
+      return Array(5).fill().map(() => Array(6).fill(null));
+    }
+    
+    return teacherSchedules[teacherId].map(day => 
+      day.map(period => 
+        period.classroomId ? {
+          classroom: period.classroomName,
+          subject: period.subject,
+          grade: period.grade,
+          division: classrooms.find(c => c.id === period.classroomId)?.division || ''
+        } : null
+      )
+    );
+  };
+
+  // Simplified function using teacherSchedules
+  const isTeacherAvailable = (teacherId, dayIndex, periodIndex, excludeClassroomId = null) => {
+    if (!teacherSchedules[teacherId]) return true;
+    
+    const assignment = teacherSchedules[teacherId][dayIndex][periodIndex];
+    if (!assignment || !assignment.classroomId) return true;
+    
+    // If excluding a specific classroom, check if the assignment is for that classroom
+    if (excludeClassroomId && assignment.classroomId === excludeClassroomId) {
+      return true;
+    }
+    
+    return false;
+  };
+
+  const autoAssignTeachers = () => {
+    const newClassSchedules = { ...classSchedules };
+    const newTeacherSchedules = { ...teacherSchedules };
+    
+    classrooms.forEach(classroom => {
+      const schedule = newClassSchedules[classroom.id];
       const classSubjectsList = getSubjectsForClass(classroom.grade);
       
       schedule.forEach((day, dayIndex) => {
         day.forEach((period, periodIndex) => {
           if (!period.teacherId && classSubjectsList.length > 0) {
-            // Try to assign a subject from the class curriculum
             const subject = classSubjectsList[Math.floor(Math.random() * classSubjectsList.length)];
             
-            // Find available teachers who can teach this subject to this class
             const availableTeachers = teachers.filter(teacher => {
-              // Check if teacher can teach this subject and class
               if (!teacher.subjects.includes(subject) || !teacher.classes.includes(classroom.grade)) {
                 return false;
               }
               
-              // Check if teacher is available at this time across all classrooms
-              for (const otherClassroomId of Object.keys(newSchedules)) {
-                if (parseInt(otherClassroomId) === classroom.id) continue;
-                
-                const otherSchedule = newSchedules[otherClassroomId];
-                if (otherSchedule[dayIndex] && otherSchedule[dayIndex][periodIndex]) {
-                  const otherPeriod = otherSchedule[dayIndex][periodIndex];
-                  if (otherPeriod.teacherId === teacher.id) {
-                    return false;
-                  }
-                }
+              // Use teacherSchedules for availability check
+              if (newTeacherSchedules[teacher.id] && 
+                  newTeacherSchedules[teacher.id][dayIndex] && 
+                  newTeacherSchedules[teacher.id][dayIndex][periodIndex] &&
+                  newTeacherSchedules[teacher.id][dayIndex][periodIndex].classroomId) {
+                return false;
               }
+              
               return true;
             });
             
             if (availableTeachers.length > 0) {
               const teacher = availableTeachers[Math.floor(Math.random() * availableTeachers.length)];
               
+              // Update class schedule
               schedule[dayIndex][periodIndex] = {
                 teacher: teacher.name,
                 subject: subject,
                 teacherId: teacher.id
+              };
+
+              // Update teacher schedule
+              if (!newTeacherSchedules[teacher.id]) {
+                newTeacherSchedules[teacher.id] = Array(5).fill().map(() => 
+                  Array(6).fill({ classroomId: null, subject: null, classroomName: null, grade: null })
+                );
+              }
+              newTeacherSchedules[teacher.id][dayIndex][periodIndex] = {
+                classroomId: classroom.id,
+                subject: subject,
+                classroomName: classroom.name,
+                grade: classroom.grade
               };
             }
           }
@@ -171,53 +252,88 @@ const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) 
       });
     });
     
-    setSchedules(newSchedules);
+    setclassSchedules(newClassSchedules);
+    setTeacherSchedules(newTeacherSchedules);
   };
 
-  // Get schedule conflicts
+  // Simplified conflict detection using teacherSchedules
   const getScheduleConflicts = () => {
     const conflicts = [];
     
-    // Check for teacher conflicts (teacher assigned to multiple classes at same time)
-    for (let dayIndex = 0; dayIndex < 5; dayIndex++) {
-      for (let periodIndex = 0; periodIndex < 6; periodIndex++) {
-        const teacherAssignments = {};
-        
-        classrooms.forEach(classroom => {
-          const period = schedules[classroom.id][dayIndex][periodIndex];
-          if (period.teacherId) {
-            if (teacherAssignments[period.teacherId]) {
+    Object.keys(teacherSchedules).forEach(teacherId => {
+      const teacher = teachers.find(t => t.id === parseInt(teacherId));
+      if (!teacher) return;
+
+      for (let dayIndex = 0; dayIndex < 5; dayIndex++) {
+        for (let periodIndex = 0; periodIndex < 6; periodIndex++) {
+          const assignment = teacherSchedules[teacherId][dayIndex][periodIndex];
+          
+          if (assignment && assignment.classroomId) {
+            // Check if this teacher appears in multiple classrooms at the same time
+            // by cross-referencing with classSchedules
+            const conflictingClassrooms = [];
+            
+            classrooms.forEach(classroom => {
+              const period = classSchedules[classroom.id][dayIndex][periodIndex];
+              if (period.teacherId === parseInt(teacherId)) {
+                conflictingClassrooms.push(classroom.name);
+              }
+            });
+            
+            if (conflictingClassrooms.length > 1) {
               conflicts.push({
                 type: 'teacher_conflict',
-                teacher: period.teacher,
+                teacher: teacher.name,
                 day: dayIndex,
                 period: periodIndex,
-                classrooms: [teacherAssignments[period.teacherId], classroom.name]
+                classrooms: conflictingClassrooms
               });
-            } else {
-              teacherAssignments[period.teacherId] = classroom.name;
             }
           }
-        });
+        }
       }
-    }
+    });
     
-    return conflicts;
+    return [...new Set(conflicts)]; // Remove duplicates
   };
 
-  // Export data
+  // Additional utility functions using the enhanced utilities
+  const removeClassroom = (classroomId) => {
+    return removeClassroomUtil(classroomId, classrooms, setClassrooms, classSchedules, setclassSchedules, teacherSchedules, setTeacherSchedules);
+  };
+
+  const validateNewClassroom = (classroomData) => {
+    return validateClassroomData(classroomData, classrooms);
+  };
+
+  const getClassroomStatistics = (classroomId) => {
+    return getClassroomStats(classroomId, classSchedules, teachers);
+  };
+
+  const getAllClassroomStatistics = () => {
+    return getAllClassroomsStats(classrooms, classSchedules, teachers);
+  };
+
+  const getTeachersWorkloadSummary = () => {
+    return getWorkloadSummary(teachers, teacherSchedules);
+  };
+
+  const getIndividualTeacherWorkload = (teacherId) => {
+    return getTeacherWorkload(teacherId, teacherSchedules);
+  };
+
   const exportData = () => {
     const exportData = {
       teachers,
       classrooms,
       classSubjects,
-      schedules: schedules,
+      classSchedules,
+      teacherSchedules, // Include teacher schedules in export
       conflicts: getScheduleConflicts()
     };
     
     console.log('Schedule Data:', exportData);
     
-    // Create downloadable JSON
     const dataStr = JSON.stringify(exportData, null, 2);
     const dataBlob = new Blob([dataStr], { type: 'application/json' });
     const url = URL.createObjectURL(dataBlob);
@@ -231,9 +347,11 @@ const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) 
     teachers,
     classrooms,
     classSubjects,
-    schedules,
+    classSchedules,
+    teacherSchedules, // Export teacherSchedules for external use
     addTeacher,
     addClassroom,
+    removeClassroom,
     updateSchedule,
     clearAllSchedules,
     getTeacherTimetable,
@@ -243,6 +361,11 @@ const updateSchedule = (classroomId, dayIndex, periodIndex, teacherId, subject) 
     isTeacherAvailable,
     autoAssignTeachers,
     getScheduleConflicts,
+    validateNewClassroom,
+    getClassroomStatistics,
+    getAllClassroomStatistics,
+    getTeachersWorkloadSummary,
+    getIndividualTeacherWorkload,
     exportData
   };
 };

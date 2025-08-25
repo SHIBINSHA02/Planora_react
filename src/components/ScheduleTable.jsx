@@ -13,7 +13,7 @@ const ScheduleTable = ({
   getTeachersForTimeSlot,
   type = "classroom",
   classroom,
-  schedules = {}, // Added schedules prop to access all classroom schedules
+  classSchedules = {}, // Added schedules prop to access all classroom schedules
   classrooms = [], // Added classrooms prop
 }) => {
   const [isMultiSelect, setIsMultiSelect] = useState(false)
@@ -335,7 +335,7 @@ const ScheduleTable = ({
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             } focus:outline-none focus:ring-1 focus:ring-blue-500`}
           >
-            {isMultiSelect ? "Disable Multi-Select" : "Enable Multi-Select"}
+            {isMultiSelect ? "Disable Multi-Teacher" : "Enable Multi-Teacher"}
           </button>
           <button
             onClick={() => setIsMultiAssign(!isMultiAssign)}
@@ -345,7 +345,7 @@ const ScheduleTable = ({
                 : "bg-gray-200 text-gray-700 hover:bg-gray-300"
             } focus:outline-none focus:ring-1 focus:ring-blue-500`}
           >
-            {isMultiAssign ? "Disable Multi-Assign" : "Enable Multi-Assign"}
+            {isMultiAssign ? "Disable Multi-Assign Subject" : "Enable Multi-Assign Subject"}
           </button>
         </div>
       )}
@@ -388,7 +388,7 @@ const ScheduleTable = ({
           setHoveredTeacher={setHoveredTeacher}
           days={days}               
           periods={periods}         
-          schedules={schedules}     
+          classSchedules={classSchedules}     
           classrooms={classrooms}   
           teachers={teachers}  
         />

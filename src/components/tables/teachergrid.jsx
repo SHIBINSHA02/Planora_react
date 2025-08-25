@@ -2,7 +2,7 @@
 import React, { useMemo, useCallback } from 'react';
 
 /**
- * Enhanced function to get teacher availability grid with proper live data extraction
+ * Enhanced function to get teacher availability grid using teacherSchedules data structure
  */
 const getTeacherAvailabilityGrid = (
   teacherId,
@@ -10,8 +10,7 @@ const getTeacherAvailabilityGrid = (
   currentPeriodIndex,
   days,
   periods,
-  schedules,
-  classrooms
+  teacherSchedules
 ) => {
   // Initialize grid with default availability
   const grid = Array(days.length).fill().map(() => 
@@ -19,6 +18,7 @@ const getTeacherAvailabilityGrid = (
       isBooked: false,
       className: null,
       subject: null,
+      grade: null,
       isCurrentSlot: false,
     }))
   );
@@ -27,75 +27,36 @@ const getTeacherAvailabilityGrid = (
   const targetTeacherId = parseInt(teacherId);
   
   // Validate inputs
-  if (!targetTeacherId || isNaN(targetTeacherId) || !schedules || !Array.isArray(days) || !Array.isArray(periods)) {
+  if (!targetTeacherId || isNaN(targetTeacherId) || !teacherSchedules || !Array.isArray(days) || !Array.isArray(periods)) {
     console.warn('Invalid inputs for teacher availability grid');
     return grid;
   }
 
-  // Process each time slot across all days and periods
-  for (let dayIndex = 0; dayIndex < days.length; dayIndex++) {
-    for (let periodIndex = 0; periodIndex < periods.length; periodIndex++) {
-      let isBooked = false;
-      let assignedClassroom = null;
-      let assignedSubject = null;
+  // Get teacher's schedule directly from teacherSchedules
+  const teacherSchedule = teacherSchedules[targetTeacherId];
+  
+  if (!teacherSchedule) {
+    console.warn(`No schedule found for teacher ID: ${targetTeacherId}`);
+    return grid;
+  }
 
-      // Check all classroom schedules for this time slot
-      Object.entries(schedules).forEach(([classroomId, classroomSchedule]) => {
-        try {
-          // Handle different schedule data structures
-          let daySchedule = null;
-          
-          if (Array.isArray(classroomSchedule)) {
-            // Direct array format: schedules[classroomId][dayIndex][periodIndex]
-            daySchedule = classroomSchedule[dayIndex];
-          } else if (classroomSchedule && typeof classroomSchedule === 'object') {
-            // Object format with day keys
-            const dayKey = days[dayIndex];
-            daySchedule = classroomSchedule[dayKey] || classroomSchedule[dayKey.toLowerCase()];
-          }
+  // Process each time slot using teacher's schedule
+  for (let dayIndex = 0; dayIndex < days.length && dayIndex < teacherSchedule.length; dayIndex++) {
+    const daySchedule = teacherSchedule[dayIndex];
+    
+    if (!daySchedule || !Array.isArray(daySchedule)) {
+      continue;
+    }
 
-          if (daySchedule && Array.isArray(daySchedule)) {
-            const periodData = daySchedule[periodIndex];
-            
-            if (periodData) {
-              // Handle different property naming conventions
-              let periodTeacherId = null;
-              if (periodData.teacherId !== undefined) {
-                periodTeacherId = periodData.teacherId;
-              } else if (periodData.teacher_id !== undefined) {
-                periodTeacherId = periodData.teacher_id;
-              } else if (periodData.teacher !== undefined) {
-                periodTeacherId = typeof periodData.teacher === 'object' 
-                  ? periodData.teacher.id 
-                  : periodData.teacher;
-              }
-
-              // Convert to number for comparison
-              const periodTeacherIdNum = parseInt(periodTeacherId);
-
-              // Check if this teacher is assigned to this slot
-              if (periodTeacherIdNum === targetTeacherId && !isNaN(periodTeacherIdNum)) {
-                isBooked = true;
-                
-                // Find classroom name
-                const classroom = classrooms?.find(c => parseInt(c.id) === parseInt(classroomId));
-                assignedClassroom = classroom?.name || classroom?.className || `Classroom ${classroomId}`;
-                
-                // Get subject
-                assignedSubject = periodData.subject || periodData.subjectName || 'Unknown Subject';
-              }
-            }
-          }
-        } catch (error) {
-          console.warn(`Error processing schedule for classroom ${classroomId}:`, error);
-        }
-      });
-
+    for (let periodIndex = 0; periodIndex < periods.length && periodIndex < daySchedule.length; periodIndex++) {
+      const periodData = daySchedule[periodIndex];
+      
       // Set grid data for this slot
       grid[dayIndex][periodIndex] = {
-        isBooked,
-        className: assignedClassroom,
-        subject: assignedSubject,
+        isBooked: !!(periodData && periodData.classroomId),
+        className: periodData?.classroomName || null,
+        subject: periodData?.subject || null,
+        grade: periodData?.grade || null,
         isCurrentSlot: dayIndex === currentDayIndex && periodIndex === currentPeriodIndex,
       };
     }
@@ -115,13 +76,12 @@ export const TeacherScheduleGrid = ({
   setHoveredTeacher,
   days,
   periods,
-  schedules,
-  classrooms,
+  teacherSchedules, // Changed from schedules + classrooms to teacherSchedules
   teachers
 }) => {
   // Memoize the schedule grid calculation to prevent unnecessary recalculations
   const scheduleGrid = useMemo(() => {
-    if (!teacher?.id || !schedules) return [];
+    if (!teacher?.id || !teacherSchedules) return [];
     
     return getTeacherAvailabilityGrid(
       teacher.id,
@@ -129,8 +89,7 @@ export const TeacherScheduleGrid = ({
       currentPeriodIndex,
       days,
       periods,
-      schedules,
-      classrooms
+      teacherSchedules
     );
   }, [
     teacher?.id,
@@ -138,14 +97,45 @@ export const TeacherScheduleGrid = ({
     currentPeriodIndex,
     days,
     periods,
-    schedules,
-    classrooms
+    teacherSchedules
   ]);
 
   // Calculate total assignments with memoization
   const totalAssignments = useMemo(() => {
     return scheduleGrid.flat().filter(slot => slot.isBooked).length;
   }, [scheduleGrid]);
+
+  // Calculate workload statistics
+  const workloadStats = useMemo(() => {
+    const totalSlots = days.length * periods.length;
+    const percentage = Math.round((totalAssignments / totalSlots) * 100);
+    const subjectCounts = {};
+    const gradeCounts = {};
+
+    scheduleGrid.flat().forEach(slot => {
+      if (slot.isBooked) {
+        if (slot.subject) {
+          subjectCounts[slot.subject] = (subjectCounts[slot.subject] || 0) + 1;
+        }
+        if (slot.grade) {
+          gradeCounts[slot.grade] = (gradeCounts[slot.grade] || 0) + 1;
+        }
+      }
+    });
+
+    return {
+      totalSlots,
+      percentage,
+      subjectCounts,
+      gradeCounts,
+      mostTaughtSubject: Object.keys(subjectCounts).length > 0 
+        ? Object.entries(subjectCounts).sort(([,a], [,b]) => b - a)[0][0]
+        : null,
+      mostTaughtGrade: Object.keys(gradeCounts).length > 0
+        ? Object.entries(gradeCounts).sort(([,a], [,b]) => b - a)[0][0]
+        : null
+    };
+  }, [scheduleGrid, days.length, periods.length, totalAssignments]);
 
   // Handle mouse leave with useCallback to prevent unnecessary re-renders
   const handleMouseLeave = useCallback(() => {
@@ -154,9 +144,9 @@ export const TeacherScheduleGrid = ({
 
   // Calculate position to ensure tooltip stays within viewport
   const tooltipStyle = useMemo(() => ({
-    left: Math.min(position.x + 10, window.innerWidth - 350),
+    left: Math.min(position.x + 10, window.innerWidth - 380),
     top: Math.max(position.y - 50, 10),
-    maxHeight: '450px',
+    maxHeight: '500px',
     overflowY: 'auto'
   }), [position.x, position.y]);
 
@@ -172,12 +162,19 @@ export const TeacherScheduleGrid = ({
           {teacher.name}'s Weekly Schedule
         </h4>
         <div className="space-y-1 text-xs text-gray-600">
-          <p>Subjects: {teacher.subjects?.join(', ') || 'All subjects'}</p>
+          <p><strong>Qualified subjects:</strong> {teacher.subjects?.join(', ') || 'All subjects'}</p>
+          <p><strong>Can teach grades:</strong> {teacher.classes?.join(', ') || 'All grades'}</p>
+          {workloadStats.mostTaughtSubject && (
+            <p><strong>Primary subject:</strong> {workloadStats.mostTaughtSubject}</p>
+          )}
+          {workloadStats.mostTaughtGrade && (
+            <p><strong>Primary grade:</strong> {workloadStats.mostTaughtGrade}</p>
+          )}
           <p className="text-blue-600 font-medium">
-            Current: {days[currentDayIndex]} - Period {currentPeriodIndex + 1}
+            <strong>Current:</strong> {days[currentDayIndex]} - Period {currentPeriodIndex + 1}
           </p>
           <p className="text-red-600 font-medium">
-            Occupied slots: {totalAssignments}/{days.length * periods.length}
+            <strong>Occupied slots:</strong> {totalAssignments}/{workloadStats.totalSlots} ({workloadStats.percentage}%)
           </p>
         </div>
       </div>
@@ -203,7 +200,8 @@ export const TeacherScheduleGrid = ({
                 isBooked: false, 
                 isCurrentSlot: false,
                 className: null,
-                subject: null 
+                subject: null,
+                grade: null 
               };
               
               return (
@@ -220,9 +218,13 @@ export const TeacherScheduleGrid = ({
                   `}
                   title={
                     slot.isCurrentSlot
-                      ? `Current slot: ${days[dayIndex]} Period ${periodIndex + 1}${slot.isBooked ? ` - Assigned: ${slot.className} (${slot.subject})` : ' - Available'}`
+                      ? `Current slot: ${days[dayIndex]} Period ${periodIndex + 1}${
+                          slot.isBooked 
+                            ? ` - Teaching: ${slot.subject} to Grade ${slot.grade} (${slot.className})` 
+                            : ' - Available'
+                        }`
                       : slot.isBooked 
-                        ? `Assigned: ${slot.className} - ${slot.subject}` 
+                        ? `Teaching: ${slot.subject} - Grade ${slot.grade} (${slot.className})` 
                         : `Available: ${days[dayIndex]} Period ${periodIndex + 1}`
                   }
                 >
@@ -237,8 +239,9 @@ export const TeacherScheduleGrid = ({
         ))}
       </div>
       
-      {/* Legend */}
-      <div className="mt-4 pt-3 border-t">
+      {/* Enhanced Statistics Section */}
+      <div className="mt-4 pt-3 border-t space-y-3">
+        {/* Legend */}
         <div className="flex items-center gap-4 text-xs flex-wrap">
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-green-100 border border-green-300 rounded"></div>
@@ -246,7 +249,7 @@ export const TeacherScheduleGrid = ({
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-red-500 rounded"></div>
-            <span className="text-gray-600">Assigned</span>
+            <span className="text-gray-600">Teaching</span>
           </div>
           <div className="flex items-center gap-2">
             <div className="w-3 h-3 bg-blue-500 rounded relative">
@@ -257,28 +260,62 @@ export const TeacherScheduleGrid = ({
         </div>
         
         {/* Workload indicator */}
-        <div className="mt-2 text-xs">
+        <div className="text-xs">
           <div className="flex items-center justify-between mb-1">
             <span className="text-gray-600">Weekly workload:</span>
             <span className={`font-medium ${
-              totalAssignments > (days.length * periods.length * 0.8) ? 'text-red-600' :
-              totalAssignments > (days.length * periods.length * 0.6) ? 'text-yellow-600' :
+              workloadStats.percentage > 80 ? 'text-red-600' :
+              workloadStats.percentage > 60 ? 'text-yellow-600' :
               'text-green-600'
             }`}>
-              {Math.round((totalAssignments / (days.length * periods.length)) * 100)}%
+              {workloadStats.percentage}%
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2">
             <div 
               className={`h-2 rounded-full transition-all duration-300 ${
-                totalAssignments > (days.length * periods.length * 0.8) ? 'bg-red-500' :
-                totalAssignments > (days.length * periods.length * 0.6) ? 'bg-yellow-500' :
+                workloadStats.percentage > 80 ? 'bg-red-500' :
+                workloadStats.percentage > 60 ? 'bg-yellow-500' :
                 'bg-green-500'
               }`}
-              style={{ width: `${(totalAssignments / (days.length * periods.length)) * 100}%` }}
+              style={{ width: `${workloadStats.percentage}%` }}
             ></div>
           </div>
         </div>
+
+        {/* Subject Distribution */}
+        {Object.keys(workloadStats.subjectCounts).length > 0 && (
+          <div className="text-xs">
+            <p className="text-gray-600 mb-1">Subject distribution:</p>
+            <div className="space-y-1">
+              {Object.entries(workloadStats.subjectCounts)
+                .sort(([,a], [,b]) => b - a)
+                .slice(0, 3)
+                .map(([subject, count]) => (
+                  <div key={subject} className="flex justify-between items-center">
+                    <span className="text-gray-700">{subject}</span>
+                    <span className="text-gray-500">{count} periods</span>
+                  </div>
+                ))}
+            </div>
+          </div>
+        )}
+
+        {/* Grade Distribution */}
+        {Object.keys(workloadStats.gradeCounts).length > 0 && (
+          <div className="text-xs">
+            <p className="text-gray-600 mb-1">Grade distribution:</p>
+            <div className="flex flex-wrap gap-2">
+              {Object.entries(workloadStats.gradeCounts)
+                .sort(([,a], [,b]) => b - a)
+                .map(([grade, count]) => (
+                  <span key={grade} className="bg-gray-100 px-2 py-1 rounded text-xs">
+                    Grade {grade}: {count}
+                  </span>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

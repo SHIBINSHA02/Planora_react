@@ -6,7 +6,7 @@ import ScheduleTable from './ScheduleTable';
 const ClassroomScheduleView = ({
   classrooms,
   teachers,
-  schedules,
+  classSchedules,
   selectedClassroom,
   setSelectedClassroom,
   updateSchedule,
@@ -91,9 +91,10 @@ const ClassroomScheduleView = ({
   // Get classroom statistics
   const getClassroomStats = () => {
     const classroom = getCurrentClassroom();
-    if (!classroom || !schedules[selectedClassroom]) return null;
+    if (!classroom || !classSchedules[selectedClassroom]) return null;
 
-    const schedule = schedules[selectedClassroom];
+   
+    const schedule = classSchedules[parseInt(selectedClassroom)];
     let totalSlots = 0;
     let filledSlots = 0;
     let subjectCount = {};
@@ -165,7 +166,7 @@ const ClassroomScheduleView = ({
         )}
       </div>
 
-      {selectedClassroom && schedules[selectedClassroom] && (
+      {selectedClassroom && classSchedules[selectedClassroom] && (
         <div className="space-y-4">
           {/* Class Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -214,7 +215,7 @@ const ClassroomScheduleView = ({
           </div>
 
           <ScheduleTable
-            scheduleData={schedules[selectedClassroom]}
+            scheduleData={classSchedules[selectedClassroom]}
             days={days}
             periods={periods}
             teachers={teachers}
@@ -267,7 +268,7 @@ const ClassroomScheduleView = ({
         </div>
       )}
 
-      {selectedClassroom && !schedules[selectedClassroom] && (
+      {selectedClassroom && !classSchedules[selectedClassroom] && (
         <div className="text-center py-8 text-gray-500">
           <p>No schedule data found for this classroom.</p>
         </div>
@@ -294,7 +295,7 @@ const ClassroomScheduleView = ({
 ClassroomScheduleView.propTypes = {
   classrooms: PropTypes.array.isRequired,
   teachers: PropTypes.array.isRequired,
-  schedules: PropTypes.object.isRequired,
+  classSchedules: PropTypes.object.isRequired,
   selectedClassroom: PropTypes.string.isRequired,
   setSelectedClassroom: PropTypes.func.isRequired,
   updateSchedule: PropTypes.func.isRequired,

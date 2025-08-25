@@ -1,3 +1,4 @@
+<!-- src/components/hooks/Readme.md -->
 Detailed Guide to the useScheduleData React Hook
 This document provides a comprehensive breakdown of the useScheduleData custom React hook. This hook is a central hub for managing all state and business logic required for a school's scheduling application. By encapsulating all the data and functions, it simplifies the process of building your application's user interface.
 

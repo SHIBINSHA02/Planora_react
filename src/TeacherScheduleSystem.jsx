@@ -16,7 +16,7 @@ const TeacherScheduleSystem = () => {
     teachers,
     classrooms,
     classSubjects,
-    schedules,
+   classSchedules,
     addTeacher,
     addClassroom,
     updateSchedule,
@@ -67,7 +67,7 @@ const TeacherScheduleSystem = () => {
               classrooms={classrooms}
               teachers={teachers}
               subjects={subjects}
-              schedules={schedules}
+              classSchedules={classSchedules}
               selectedClassroom={selectedClassroom}
               setSelectedClassroom={setSelectedClassroom}
               updateSchedule={updateSchedule}
