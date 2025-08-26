@@ -23,7 +23,7 @@ const TeacherScheduleSystem = () => {
     clearAllSchedules,
     getTeacherTimetable,
     getAvailableTeachers,
-    getSubjectsForClass, // Add this
+    getSubjectsForClass, 
     getTeachersForSubject, // Add this
     isTeacherAvailable,
     autoAssignTeachers,
