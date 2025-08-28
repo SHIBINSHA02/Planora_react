@@ -1,7 +1,7 @@
-// src/components/StatsCard.jsx
-// components/StatsCard.jsx
-import React from 'react';
+// src/components/Dashboard/StatsCard.jsx
 
+import React from 'react';
+import {Icon} from 'lucide-react';
 const StatsCard = ({ 
   title, 
   value, 

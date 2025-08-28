@@ -1,8 +1,9 @@
+// src/components/Dashboard/DashboardView.jsx
 // src/components/DashboardView.jsx
-import { Plus, User, BookOpen, MapPin, Calendar, Download, RotateCcw } from 'lucide-react';
-import StatsCard from './StatsCard';
-import TeacherForm from './TeacherForm';
-import ClassroomForm from './ClassroomForm';
+import { Plus, User,MapPin,BookOpen, Calendar, Download, RotateCcw } from 'lucide-react';
+import StatsCard from './StatsCard'
+import TeacherForm from './TeacherForm'
+import ClassroomForm from './ClassroomForm'
 import QuickActions from './QuickActions';
 import { motion } from 'framer-motion';
 
@@ -15,8 +16,6 @@ const DashboardView = ({
   autoAssignTeachers,
   clearAllSchedules,
   exportData,
-  allowMultiTeacher,
-  setAllowMultiTeacher
 }) => {
   // Animation variants for smooth entrance
   const containerVariants = {

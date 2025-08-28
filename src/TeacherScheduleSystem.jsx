@@ -1,7 +1,7 @@
 // src/TeacherScheduleSystem.jsx
 import React, { useState } from 'react';
 import Header from './components/Header';
-import DashboardView from './components/DashboardView';
+import DashboardView from './components/Dashboard/DashboardView';
 import ClassroomScheduleView from './components/ClassroomScheduleView';
 import TeacherTimetableView from './components/TeacherTimetableView';
 import ErrorBoundary from './components/ErrorBoundary';
