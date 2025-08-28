@@ -54,10 +54,13 @@ const Homepage = ({ navigate }) => {
           <div className="flex justify-between items-center h-16">
             <div className="flex items-center">
               <div className="flex items-center space-x-2">
-                <div className="bg-indigo-600 rounded-lg p-2">
-                  <Calendar className="h-6 w-6 text-white" />
-                </div>
-                <span className="text-xl font-bold text-gray-900">EduSchedule</span>
+                <div className="flex-shrink-0">
+            <img
+              src="./logo.svg"
+              alt="Planora Logo"
+              className="h-[70px] w-auto object-contain"
+            />
+          </div>
               </div>
             </div>
 
@@ -238,7 +241,7 @@ const Homepage = ({ navigate }) => {
               Loved by Educators Worldwide
             </h2>
             <p className="text-xl text-gray-600">
-              Join thousands of schools already using EduSchedule
+              Join thousands of schools already using Planora
             </p>
           </div>
           
@@ -275,7 +278,7 @@ const Homepage = ({ navigate }) => {
                 <div className="bg-indigo-600 rounded-lg p-2">
                   <Calendar className="h-6 w-6 text-white" />
                 </div>
-                <span className="text-xl font-bold">EduSchedule</span>
+                <span className="text-xl font-bold">Planora</span>
               </div>
               <p className="text-gray-400">
                 Empowering educational institutions with intelligent scheduling solutions.
