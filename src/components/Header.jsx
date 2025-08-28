@@ -54,7 +54,7 @@ const Header = ({ currentView, setCurrentView }) => {
                   ? 'text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
-              style={{ backgroundColor: currentView === 'dashboard' ? '#8493d4' : 'transparent' }}
+              style={{ backgroundColor: currentView === 'dashboard' ? '#4f39f6' : 'transparent' }}
             >
               Dashboard
             </button>
@@ -65,7 +65,7 @@ const Header = ({ currentView, setCurrentView }) => {
                   ? 'text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
-              style={{ backgroundColor: currentView === 'classroom' ? '#8493d4' : 'transparent' }}
+              style={{ backgroundColor: currentView === 'classroom' ? '#4f39f6' : 'transparent' }}
             >
               Classroom Schedules
             </button>
@@ -76,7 +76,7 @@ const Header = ({ currentView, setCurrentView }) => {
                   ? 'text-white'
                   : 'text-gray-600 hover:text-gray-900'
               }`}
-              style={{ backgroundColor: currentView === 'teacher' ? '#8493d4' : 'transparent' }}
+              style={{ backgroundColor: currentView === 'teacher' ? '#4f39f6' : 'transparent' }}
             >
               Teacher Timetables
             </button>
@@ -95,7 +95,7 @@ const Header = ({ currentView, setCurrentView }) => {
                   ? 'text-white bg-blue-500 hover:bg-blue-600'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
-              style={{ backgroundColor: currentView === 'dashboard' ? '#8493d4' : 'transparent', color: currentView === 'dashboard' ? '#ffffff' : '#4b5563' }}
+              style={{ backgroundColor: currentView === 'dashboard' ? '#4f39f6' : 'transparent', color: currentView === 'dashboard' ? '#ffffff' : '#4b5563' }}
             >
               Dashboard
             </button>
@@ -106,7 +106,7 @@ const Header = ({ currentView, setCurrentView }) => {
                   ? 'text-white bg-blue-500 hover:bg-blue-600'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
-              style={{ backgroundColor: currentView === 'classroom' ? '#8493d4' : 'transparent', color: currentView === 'classroom' ? '#ffffff' : '#4b5563' }}
+              style={{ backgroundColor: currentView === 'classroom' ? '#4f39f6' : 'transparent', color: currentView === 'classroom' ? '#ffffff' : '#4b5563' }}
             >
               Classroom Schedules
             </button>
@@ -117,7 +117,7 @@ const Header = ({ currentView, setCurrentView }) => {
                   ? 'text-white bg-blue-500 hover:bg-blue-600'
                   : 'text-gray-700 hover:bg-gray-100'
               }`}
-              style={{ backgroundColor: currentView === 'teacher' ? '#8493d4' : 'transparent', color: currentView === 'teacher' ? '#ffffff' : '#4b5563' }}
+              style={{ backgroundColor: currentView === 'teacher' ? '#4f39f6' : 'transparent', color: currentView === 'teacher' ? '#ffffff' : '#4b5563' }}
             >
               Teacher Timetables
             </button>

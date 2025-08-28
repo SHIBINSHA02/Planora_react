@@ -1,24 +1,30 @@
-// src/components/TeacherForm.jsx
-// components/TeacherForm.jsx
+// src/components/Dashboard/TeacherForm.jsx
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 
 const TeacherForm = ({ subjects, onAddTeacher }) => {
+  // State to manage the input fields for a new teacher
   const [newTeacher, setNewTeacher] = useState({ name: '', subjects: [] });
 
+  // Handles the form submission
   const handleSubmit = () => {
+    // Call the parent function to add the teacher and check if it was successful
     if (onAddTeacher(newTeacher)) {
+      // If successful, reset the input fields
       setNewTeacher({ name: '', subjects: [] });
     }
   };
 
+  // Handles checking and unchecking subjects
   const handleSubjectChange = (subject, checked) => {
     if (checked) {
+      // Add the subject to the newTeacher's subjects array
       setNewTeacher(prev => ({
         ...prev,
         subjects: [...prev.subjects, subject]
       }));
     } else {
+      // Remove the subject from the newTeacher's subjects array
       setNewTeacher(prev => ({
         ...prev,
         subjects: prev.subjects.filter(s => s !== subject)
@@ -35,7 +41,8 @@ const TeacherForm = ({ subjects, onAddTeacher }) => {
           placeholder="Teacher Name"
           value={newTeacher.name}
           onChange={(e) => setNewTeacher({...newTeacher, name: e.target.value})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+          // Updated the focus ring color to the new hex code
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4f39f6]"
         />
         
         <div>
@@ -47,7 +54,8 @@ const TeacherForm = ({ subjects, onAddTeacher }) => {
                   type="checkbox"
                   checked={newTeacher.subjects.includes(subject)}
                   onChange={(e) => handleSubjectChange(subject, e.target.checked)}
-                  className="rounded"
+                  // Updated the checkbox color
+                  className="rounded text-[#4f39f6] focus:ring-[#4f39f6]"
                 />
                 <span className="text-sm">{subject}</span>
               </label>
@@ -57,7 +65,8 @@ const TeacherForm = ({ subjects, onAddTeacher }) => {
         
         <button
           onClick={handleSubmit}
-          className="w-full bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors flex items-center justify-center space-x-2"
+          // Updated the background and hover colors to the new hex code
+          className="w-full bg-[#4f39f6] text-white px-4 py-2 rounded-md hover:bg-[#4f39f6] transition-colors flex items-center justify-center space-x-2"
         >
           <Plus className="h-4 w-4" />
           <span>Add Teacher</span>

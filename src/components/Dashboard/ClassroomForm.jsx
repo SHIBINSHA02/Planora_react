@@ -1,14 +1,16 @@
 // src/components/Dashboard/ClassroomForm.jsx
-// src/components/ClassroomForm.jsx
-// components/ClassroomForm.jsx
 import React, { useState } from 'react';
 import { Plus } from 'lucide-react';
 
 const ClassroomForm = ({ onAddClassroom }) => {
+  // State to manage the input fields for a new classroom
   const [newClassroom, setNewClassroom] = useState({ name: '', grade: '' });
 
+  // Handles the form submission
   const handleSubmit = () => {
+    // Call the parent function to add the classroom and check if it was successful
     if (onAddClassroom(newClassroom)) {
+      // If successful, reset the input fields
       setNewClassroom({ name: '', grade: '' });
     }
   };
@@ -22,7 +24,7 @@ const ClassroomForm = ({ onAddClassroom }) => {
           placeholder="Classroom Name"
           value={newClassroom.name}
           onChange={(e) => setNewClassroom({...newClassroom, name: e.target.value})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4f39f6]"
         />
         
         <input
@@ -30,12 +32,13 @@ const ClassroomForm = ({ onAddClassroom }) => {
           placeholder="Grade (e.g., 10th)"
           value={newClassroom.grade}
           onChange={(e) => setNewClassroom({...newClassroom, grade: e.target.value})}
-          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-green-500"
+          className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4f39f6]"
         />
         
         <button
           onClick={handleSubmit}
-          className="w-full bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors flex items-center justify-center space-x-2"
+          // The background and hover colors have been updated to the new hex code
+          className="w-full bg-[#4f39f6] text-white px-4 py-2 rounded-md hover:bg-[#4f39f6] transition-colors flex items-center justify-center space-x-2"
         >
           <Plus className="h-4 w-4" />
           <span>Add Classroom</span>

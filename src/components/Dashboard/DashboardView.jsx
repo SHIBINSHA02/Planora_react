@@ -1,5 +1,4 @@
 // src/components/Dashboard/DashboardView.jsx
-// src/components/DashboardView.jsx
 import { Plus, User,MapPin,BookOpen, Calendar, Download, RotateCcw } from 'lucide-react';
 import StatsCard from './StatsCard'
 import TeacherForm from './TeacherForm'
@@ -61,10 +60,10 @@ const DashboardView = ({
           title="Total Teachers"
           value={teachers.length}
           icon={User}
-          bgColor="bg-gradient-to-br from-blue-100 to-blue-200"
-          textColor="text-blue-900"
-          valueColor="text-blue-700"
-          iconColor="text-blue-600"
+          bgColor="bg-white"
+          textColor="text-gray-900"
+          valueColor="text-[#4f39f6]"
+          iconColor="text-[#4f39f6]"
           className="hover:shadow-lg transition-shadow duration-300"
         />
         
@@ -72,10 +71,10 @@ const DashboardView = ({
           title="Total Classrooms"
           value={classrooms.length}
           icon={MapPin}
-          bgColor="bg-gradient-to-br from-green-100 to-green-200"
-          textColor="text-green-900"
-          valueColor="text-green-700"
-          iconColor="text-green-600"
+          bgColor="bg-white"
+          textColor="text-gray-900"
+          valueColor="text-[#4f39f6]"
+          iconColor="text-[#4f39f6]"
           className="hover:shadow-lg transition-shadow duration-300"
         />
         
@@ -83,10 +82,10 @@ const DashboardView = ({
           title="Total Subjects"
           value={subjects.length}
           icon={BookOpen}
-          bgColor="bg-gradient-to-br from-purple-100 to-purple-200"
-          textColor="text-purple-900"
-          valueColor="text-purple-700"
-          iconColor="text-purple-600"
+          bgColor="bg-white"
+          textColor="text-gray-900"
+          valueColor="text-[#4f39f6]"
+          iconColor="text-[#4f39f6]"
           className="hover:shadow-lg transition-shadow duration-300"
         />
       </motion.div>

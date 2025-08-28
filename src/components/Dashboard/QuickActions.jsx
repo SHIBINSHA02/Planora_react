@@ -1,4 +1,4 @@
-// src/components/QuickActions.jsx
+// src/components/Dashboard/QuickActions.jsx
 import React from 'react';
 import { Calendar, Download, RotateCcw } from 'lucide-react';
 
@@ -11,7 +11,8 @@ const QuickActions = ({ onAutoAssign, onClearAll, onExport}) => {
       <div className="flex flex-wrap gap-3 mb-6">
         <button
           onClick={onAutoAssign}
-          className="bg-purple-500 text-white px-4 py-2 rounded-md hover:bg-purple-600 transition-colors flex items-center space-x-2"
+          // The background and hover colors have been updated to the new hex code
+          className="bg-[#4f39f6] text-white px-4 py-2 rounded-md hover:bg-[#4f39f6] transition-colors flex items-center space-x-2"
         >
           <Calendar className="h-4 w-4" />
           <span>Auto Assign Teachers</span>
@@ -19,7 +20,8 @@ const QuickActions = ({ onAutoAssign, onClearAll, onExport}) => {
         
         <button
           onClick={onClearAll}
-          className="bg-red-500 text-white px-4 py-2 rounded-md hover:bg-red-600 transition-colors flex items-center space-x-2"
+          // The background and hover colors have been updated to the new hex code
+          className="bg-[#4f39f6] text-white px-4 py-2 rounded-md hover:bg-[#4f39f6] transition-colors flex items-center space-x-2"
         >
           <RotateCcw className="h-4 w-4" />
           <span>Clear All Schedules</span>
@@ -27,7 +29,8 @@ const QuickActions = ({ onAutoAssign, onClearAll, onExport}) => {
         
         <button
           onClick={onExport}
-          className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors flex items-center space-x-2"
+          // The background and hover colors have been updated to the new hex code
+          className="bg-[#4f39f6] text-white px-4 py-2 rounded-md hover:bg-[#4f39f6] transition-colors flex items-center space-x-2"
         >
           <Download className="h-4 w-4" />
           <span>Export Data</span>

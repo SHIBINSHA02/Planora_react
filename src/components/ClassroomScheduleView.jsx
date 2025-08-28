@@ -93,7 +93,7 @@ const ClassroomScheduleView = ({
     const classroom = getCurrentClassroom();
     if (!classroom || !classSchedules[selectedClassroom]) return null;
 
-   
+    
     const schedule = classSchedules[parseInt(selectedClassroom)];
     let totalSlots = 0;
     let filledSlots = 0;
@@ -131,7 +131,8 @@ const ClassroomScheduleView = ({
           <select
             value={selectedClassroom}
             onChange={(e) => setSelectedClassroom(e.target.value)}
-            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+            // Updated focus ring color
+            className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#4f39f6]"
           >
             <option value="">Select Classroom</option>
             {classrooms.map(classroom => (
@@ -171,15 +172,15 @@ const ClassroomScheduleView = ({
           {/* Class Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Subjects Info */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-blue-800 mb-2">
+            <div className="bg-[#4f39f6] bg-opacity-10 border border-[#4f39f6] rounded-lg p-4">
+              <h3 className="text-sm font-medium text-[#4f39f6] mb-2">
                 Subjects for {currentClassroom?.grade}
               </h3>
               <div className="flex flex-wrap gap-1">
                 {availableSubjects.map(subject => (
                   <span 
                     key={subject}
-                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
+                    className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-[#4f39f6] text-white"
                   >
                     {subject}
                   </span>
@@ -188,16 +189,16 @@ const ClassroomScheduleView = ({
             </div>
 
             {/* Teachers Info */}
-            <div className="bg-green-50 border border-green-200 rounded-lg p-4">
-              <h3 className="text-sm font-medium text-green-800 mb-2">
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
+              <h3 className="text-sm font-medium text-gray-900 mb-2">
                 Available Teachers
               </h3>
-              <div className="text-xs text-green-600">
+              <div className="text-xs text-gray-600">
                 {teachers.filter(t => t.classes.includes(currentClassroom?.grade)).length} teachers 
                 can teach this class
               </div>
               {stats && Object.keys(stats.teacherCount).length > 0 && (
-                <div className="mt-2 text-xs text-green-700">
+                <div className="mt-2 text-xs text-gray-700">
                   Currently assigned: {Object.keys(stats.teacherCount).join(', ')}
                 </div>
               )}
@@ -205,9 +206,9 @@ const ClassroomScheduleView = ({
           </div>
 
           {/* Schedule Instructions */}
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-            <h3 className="text-sm font-medium text-amber-800 mb-2">Scheduling Rules</h3>
-            <ul className="text-xs text-amber-700 space-y-1">
+          <div className="bg-gray-100 border border-gray-200 rounded-lg p-4">
+            <h3 className="text-sm font-medium text-gray-800 mb-2">Scheduling Rules</h3>
+            <ul className="text-xs text-gray-700 space-y-1">
               <li>• Only teachers qualified for this class and subject are shown</li>
               <li>• Teachers cannot be assigned to multiple classes at the same time</li>
               <li>• Subjects are limited to the curriculum for {currentClassroom?.grade}</li>
@@ -230,7 +231,7 @@ const ClassroomScheduleView = ({
 
           {/* Schedule Statistics */}
           {stats && (
-            <div className="bg-gray-50 border border-gray-200 rounded-lg p-4">
+            <div className="bg-white border border-gray-200 rounded-lg p-4">
               <h3 className="text-sm font-medium text-gray-800 mb-3">Schedule Statistics</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Subject Distribution */}
