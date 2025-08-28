@@ -1,11 +1,12 @@
+// src/components/TeacherScheduleSystem.jsx
 // src/TeacherScheduleSystem.jsx
 import React, { useState } from 'react';
-import Header from './components/Header';
-import DashboardView from './components/Dashboard/DashboardView';
-import ClassroomScheduleView from './components/ClassroomScheduleView';
-import TeacherTimetableView from './components/TeacherTimetableView';
-import ErrorBoundary from './components/ErrorBoundary';
-import { useScheduleData } from './components/hooks/useScheduleData';
+import Header from './Header';
+import DashboardView from './Dashboard/DashboardView';
+import ClassroomScheduleView from './ClassroomScheduleView';
+import TeacherTimetableView from './TeacherTimetableView';
+import ErrorBoundary from './ErrorBoundary';
+import { useScheduleData } from './hooks/useScheduleData';
 
 const TeacherScheduleSystem = () => {
   const [currentView, setCurrentView] = useState('dashboard');
