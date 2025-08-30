@@ -1,16 +1,16 @@
 // src/components/Dashboard/DashboardView.jsx
-import { Plus, User,MapPin,BookOpen, Calendar, Download, RotateCcw } from 'lucide-react';
-import StatsCard from './StatsCard'
-import TeacherForm from './TeacherForm'
-import ClassroomForm from './ClassroomForm'
+import { Plus, User, MapPin, BookOpen, Calendar, Download, RotateCcw } from 'lucide-react';
+import StatsCard from './StatsCard';
+import ClassroomForm from './ClassroomForm';
 import QuickActions from './QuickActions';
 import { motion } from 'framer-motion';
+import TeacherManagement from './TeacherManagement';
 
 const DashboardView = ({
   teachers,
   classrooms,
   subjects,
-  addTeacher,
+  addTeacher, // This prop might not be needed anymore since TeacherManagement handles it internally
   addClassroom,
   autoAssignTeachers,
   clearAllSchedules,
@@ -66,7 +66,7 @@ const DashboardView = ({
           iconColor="text-[#4f39f6]"
           className="hover:shadow-lg transition-shadow duration-300"
         />
-        
+
         <StatsCard
           title="Total Classrooms"
           value={classrooms.length}
@@ -77,7 +77,7 @@ const DashboardView = ({
           iconColor="text-[#4f39f6]"
           className="hover:shadow-lg transition-shadow duration-300"
         />
-        
+
         <StatsCard
           title="Total Subjects"
           value={subjects.length}
@@ -95,15 +95,16 @@ const DashboardView = ({
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         variants={itemVariants}
       >
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-300">
-          <TeacherForm 
-            subjects={subjects}
-            onAddTeacher={addTeacher}
-          />
+        {/* Teacher Management - Now handles its own state and API calls */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
+          <div className="p-6">
+            <TeacherManagement />
+          </div>
         </div>
-        
+
+        {/* Classroom Form */}
         <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-300">
-          <ClassroomForm 
+          <ClassroomForm
             onAddClassroom={addClassroom}
           />
         </div>
