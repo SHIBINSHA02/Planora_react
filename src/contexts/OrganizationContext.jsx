@@ -30,29 +30,26 @@ export const OrganizationProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Try to load from API first
-      try {
-        const orgData = await OrganizationService.getOrganization(organizationId);
-        setCurrentOrganization(orgData);
-      } catch (apiError) {
-        console.warn('Could not load organization from API:', apiError.message);
-        
-        // Fallback to sample data for demo purposes
-        const sampleOrg = {
-          id: organizationId,
-          name: 'Sample Organization',
-          admin: 'Admin User',
-          periodCount: 8,
-          totalDays: 5,
-          scheduleRows: 7,
-          scheduleColumns: 8,
-          createdAt: new Date().toISOString().split('T')[0]
-        };
-        setCurrentOrganization(sampleOrg);
-      }
+      // The service now handles API failures gracefully and returns sample data
+      const orgData = await OrganizationService.getOrganization(organizationId);
+      setCurrentOrganization(orgData);
+      
     } catch (error) {
-      setError(error.message);
       console.error('Error loading organization:', error);
+      setError('Failed to load organization. Using demo data.');
+      
+      // Final fallback to sample data
+      const sampleOrg = {
+        id: organizationId,
+        name: 'Sample Organization',
+        admin: 'Admin User',
+        periodCount: 8,
+        totalDays: 5,
+        scheduleRows: 7,
+        scheduleColumns: 8,
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+      setCurrentOrganization(sampleOrg);
     } finally {
       setLoading(false);
     }
@@ -63,39 +60,36 @@ export const OrganizationProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Try to create via API
-      try {
-        const result = await OrganizationService.createOrganization(organizationData);
-        const newOrg = result.organization || result;
-        
-        setCurrentOrganization(newOrg);
-        setOrganizations(prev => [...prev, newOrg]);
-        
-        // Save to localStorage
-        localStorage.setItem('currentOrganizationId', newOrg.id || newOrg.organisationId);
-        
-        return newOrg;
-      } catch (apiError) {
-        console.warn('Could not create organization via API:', apiError.message);
-        
-        // Fallback to local creation for demo
-        const newOrg = {
-          id: `org-${Date.now()}`,
-          ...organizationData,
-          createdAt: new Date().toISOString().split('T')[0]
-        };
-        
-        setCurrentOrganization(newOrg);
-        setOrganizations(prev => [...prev, newOrg]);
-        
-        // Save to localStorage
-        localStorage.setItem('currentOrganizationId', newOrg.id);
-        
-        return newOrg;
-      }
+      // The service now handles API failures gracefully and returns mock data
+      const result = await OrganizationService.createOrganization(organizationData);
+      const newOrg = result.organization || result;
+      
+      setCurrentOrganization(newOrg);
+      setOrganizations(prev => [...prev, newOrg]);
+      
+      // Save to localStorage
+      localStorage.setItem('currentOrganizationId', newOrg.id || newOrg.organisationId);
+      
+      return newOrg;
+      
     } catch (error) {
-      setError(error.message);
-      throw error;
+      console.error('Error creating organization:', error);
+      setError('Failed to create organization. Using demo data.');
+      
+      // Final fallback to local creation
+      const newOrg = {
+        id: `org-${Date.now()}`,
+        ...organizationData,
+        createdAt: new Date().toISOString().split('T')[0]
+      };
+      
+      setCurrentOrganization(newOrg);
+      setOrganizations(prev => [...prev, newOrg]);
+      
+      // Save to localStorage
+      localStorage.setItem('currentOrganizationId', newOrg.id);
+      
+      return newOrg;
     } finally {
       setLoading(false);
     }
@@ -116,41 +110,38 @@ export const OrganizationProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // Try to load from API
-      try {
-        const orgsData = await OrganizationService.getOrganizations();
-        setOrganizations(orgsData.organizations || orgsData || []);
-      } catch (apiError) {
-        console.warn('Could not load organizations from API:', apiError.message);
-        
-        // Fallback to sample data
-        const sampleOrgs = [
-          {
-            id: 'org-001',
-            name: 'Greenwood High School',
-            admin: 'John Smith',
-            periodCount: 8,
-            totalDays: 5,
-            scheduleRows: 7,
-            scheduleColumns: 8,
-            createdAt: '2024-01-15'
-          },
-          {
-            id: 'org-002',
-            name: 'Riverside Academy',
-            admin: 'Sarah Brown',
-            periodCount: 6,
-            totalDays: 6,
-            scheduleRows: 6,
-            scheduleColumns: 6,
-            createdAt: '2024-01-20'
-          }
-        ];
-        setOrganizations(sampleOrgs);
-      }
+      // The service now handles API failures gracefully and returns sample data
+      const orgsData = await OrganizationService.getOrganizations();
+      setOrganizations(orgsData.organizations || orgsData || []);
+      
     } catch (error) {
-      setError(error.message);
       console.error('Error loading organizations:', error);
+      setError('Failed to load organizations. Using demo data.');
+      
+      // Final fallback to sample data
+      const sampleOrgs = [
+        {
+          id: 'org-001',
+          name: 'Greenwood High School',
+          admin: 'John Smith',
+          periodCount: 8,
+          totalDays: 5,
+          scheduleRows: 7,
+          scheduleColumns: 8,
+          createdAt: '2024-01-15'
+        },
+        {
+          id: 'org-002',
+          name: 'Riverside Academy',
+          admin: 'Sarah Brown',
+          periodCount: 6,
+          totalDays: 6,
+          scheduleRows: 6,
+          scheduleColumns: 6,
+          createdAt: '2024-01-20'
+        }
+      ];
+      setOrganizations(sampleOrgs);
     } finally {
       setLoading(false);
     }
