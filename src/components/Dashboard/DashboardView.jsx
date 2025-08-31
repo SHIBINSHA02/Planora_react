@@ -1,22 +1,81 @@
 // src/components/Dashboard/DashboardView.jsx
-import { Plus, User, MapPin, BookOpen, Calendar, Download, RotateCcw } from 'lucide-react';
+// Example of how to update your DashboardView.jsx to work with the new ClassroomForm
+
+import { useState, useEffect } from 'react';
+import { Plus, User, MapPin, BookOpen } from 'lucide-react';
 import StatsCard from './StatsCard';
 import ClassroomForm from './ClassroomForm';
 import QuickActions from './QuickActions';
 import { motion } from 'framer-motion';
 import TeacherManagement from './TeacherManagement';
+import TeacherService from '../../services/teacherService';
+import OrganizationService from '../../services/organizationService.js';
 
 const DashboardView = ({
-  teachers,
-  classrooms,
-  subjects,
-  addTeacher, // This prop might not be needed anymore since TeacherManagement handles it internally
-  addClassroom,
+  teachers = [],
+  classrooms = [],
+  subjects = [],
   autoAssignTeachers,
   clearAllSchedules,
   exportData,
 }) => {
-  // Animation variants for smooth entrance
+  const [localTeachers, setLocalTeachers] = useState(teachers);
+  const [localClassrooms, setLocalClassrooms] = useState(classrooms);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  const [successMessage, setSuccessMessage] = useState('');
+
+  // Default subjects if not provided
+  const defaultSubjects = [
+    'Mathematics', 'Physics', 'Chemistry', 'Biology', 'English',
+    'History', 'Geography', 'Computer Science', 'Economics', 'Political Science'
+  ];
+
+  const availableSubjects = subjects.length > 0 ? subjects : defaultSubjects;
+
+  // Load teachers on component mount
+  useEffect(() => {
+    loadTeachers();
+  }, []);
+
+  const loadTeachers = async () => {
+    try {
+      setLoading(true);
+      const teachersData = await TeacherService.getAllTeachers();
+      setLocalTeachers(teachersData);
+    } catch (error) {
+      console.warn('Could not load teachers:', error.message);
+      setLocalTeachers(teachers);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Handle adding a new classroom
+  const handleAddClassroom = async (classroomData) => {
+    try {
+      setError(null);
+      
+      // Validate the data before sending
+      OrganizationService.validateClassroomData(classroomData);
+      
+      // Create the classroom
+      const result = await OrganizationService.createClassroom(classroomData);
+      
+      // Update local state (you might want to fetch all classrooms instead)
+      setLocalClassrooms(prev => [...prev, result.organisation.classrooms]);
+      
+      setSuccessMessage('Classroom created successfully!');
+      setTimeout(() => setSuccessMessage(''), 3000);
+      
+      return true;
+    } catch (error) {
+      setError('Failed to create classroom: ' + error.message);
+      return false;
+    }
+  };
+
+  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -43,13 +102,30 @@ const DashboardView = ({
     >
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">
-          Dashboard
-        </h1>
+        <h1 className="text-3xl font-bold text-gray-800 mb-4">Dashboard</h1>
         <p className="text-gray-600 mb-6">
           Manage your teachers, classrooms, and schedules efficiently
         </p>
       </motion.div>
+
+      {/* Success/Error Messages */}
+      {successMessage && (
+        <motion.div 
+          variants={itemVariants}
+          className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
+        >
+          {successMessage}
+        </motion.div>
+      )}
+
+      {error && (
+        <motion.div 
+          variants={itemVariants}
+          className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+        >
+          {error}
+        </motion.div>
+      )}
 
       {/* Stats Cards */}
       <motion.div
@@ -58,7 +134,7 @@ const DashboardView = ({
       >
         <StatsCard
           title="Total Teachers"
-          value={teachers.length}
+          value={localTeachers.length}
           icon={User}
           bgColor="bg-white"
           textColor="text-gray-900"
@@ -69,7 +145,7 @@ const DashboardView = ({
 
         <StatsCard
           title="Total Classrooms"
-          value={classrooms.length}
+          value={localClassrooms.length}
           icon={MapPin}
           bgColor="bg-white"
           textColor="text-gray-900"
@@ -80,7 +156,7 @@ const DashboardView = ({
 
         <StatsCard
           title="Total Subjects"
-          value={subjects.length}
+          value={availableSubjects.length}
           icon={BookOpen}
           bgColor="bg-white"
           textColor="text-gray-900"
@@ -95,17 +171,19 @@ const DashboardView = ({
         className="grid grid-cols-1 lg:grid-cols-2 gap-6"
         variants={itemVariants}
       >
-        {/* Teacher Management - Now handles its own state and API calls */}
+        {/* Teacher Management */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
           <div className="p-6">
             <TeacherManagement />
           </div>
         </div>
 
-        {/* Classroom Form */}
-        <div className="bg-white rounded-xl shadow-sm p-6 border border-gray-100 hover:shadow-md transition-shadow duration-300">
+        {/* Enhanced Classroom Form */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow duration-300">
           <ClassroomForm
-            onAddClassroom={addClassroom}
+            onAddClassroom={handleAddClassroom}
+            teachers={localTeachers}
+            subjects={availableSubjects}
           />
         </div>
       </motion.div>
