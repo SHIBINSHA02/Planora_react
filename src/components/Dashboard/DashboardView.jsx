@@ -1,6 +1,6 @@
 // src/components/Dashboard/DashboardView.jsx
 import { useState, useEffect } from 'react';
-import { Plus, User, MapPin, BookOpen } from 'lucide-react';
+import { Plus, User, MapPin, BookOpen, Building2 } from 'lucide-react';
 import StatsCard from './StatsCard';
 import ClassroomForm from './ClassroomForm';
 import QuickActions from './QuickActions';

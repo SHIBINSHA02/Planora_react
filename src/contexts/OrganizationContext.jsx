@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import OrganizationService from '../services/organizationService.js';
 
 const OrganizationContext = createContext();
@@ -16,6 +16,7 @@ export const OrganizationProvider = ({ children }) => {
   const [organizations, setOrganizations] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(false);
 
   // Load current organization from localStorage on mount
   useEffect(() => {
@@ -23,7 +24,7 @@ export const OrganizationProvider = ({ children }) => {
     if (savedOrgId) {
       loadOrganization(savedOrgId);
     }
-  }, []);
+  }, []); // Empty dependency array to run only once
 
   const loadOrganization = async (organizationId) => {
     try {
@@ -105,8 +106,14 @@ export const OrganizationProvider = ({ children }) => {
     localStorage.removeItem('currentOrganizationId');
   };
 
-  const loadOrganizations = async () => {
+  const loadOrganizations = useCallback(async () => {
+    // Prevent multiple simultaneous calls
+    if (isLoadingOrganizations) {
+      return;
+    }
+    
     try {
+      setIsLoadingOrganizations(true);
       setLoading(true);
       setError(null);
       
@@ -144,8 +151,9 @@ export const OrganizationProvider = ({ children }) => {
       setOrganizations(sampleOrgs);
     } finally {
       setLoading(false);
+      setIsLoadingOrganizations(false);
     }
-  };
+  }, [isLoadingOrganizations]); // Include the flag in dependencies
 
   const updateOrganization = async (organizationId, updateData) => {
     try {

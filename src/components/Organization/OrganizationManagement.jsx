@@ -34,8 +34,11 @@ const OrganizationManagement = ({ navigate }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
-    loadOrganizations();
-  }, [loadOrganizations]);
+    // Only load organizations if we don't have any yet
+    if (organizations.length === 0) {
+      loadOrganizations();
+    }
+  }, [loadOrganizations, organizations.length]);
 
   const validateForm = () => {
     const newErrors = {};
