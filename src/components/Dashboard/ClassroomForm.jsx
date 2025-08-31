@@ -1,11 +1,9 @@
-// src/components/Dashboard/ClassroomForm.jsx
 import React, { useState, useEffect } from 'react';
 import { Plus, Grid3X3, User, BookOpen, AlertCircle } from 'lucide-react';
 
 const ClassroomForm = ({ onAddClassroom, teachers = [], subjects = [] }) => {
   // State to manage the input fields for a new classroom
   const [newClassroom, setNewClassroom] = useState({
-    organisationId: '',
     admin: '',
     classroomId: '',
     assignedTeacher: '',
@@ -34,10 +32,6 @@ const ClassroomForm = ({ onAddClassroom, teachers = [], subjects = [] }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!newClassroom.organisationId.trim()) {
-      newErrors.organisationId = 'Organisation ID is required';
-    }
-    
     if (!newClassroom.admin.trim()) {
       newErrors.admin = 'Admin name is required';
     }
@@ -58,13 +52,7 @@ const ClassroomForm = ({ onAddClassroom, teachers = [], subjects = [] }) => {
       newErrors.assignedSubjects = 'At least one subject must be assigned';
     }
     
-    if (newClassroom.rows < 1 || newClassroom.rows > 20) {
-      newErrors.rows = 'Rows must be between 1 and 20';
-    }
-    
-    if (newClassroom.columns < 1 || newClassroom.columns > 20) {
-      newErrors.columns = 'Columns must be between 1 and 20';
-    }
+
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -136,8 +124,6 @@ const ClassroomForm = ({ onAddClassroom, teachers = [], subjects = [] }) => {
       if (success) {
         // Reset form on success
         setNewClassroom({
-          organisationId: '',
-          admin: '',
           classroomId: '',
           assignedTeacher: '',
           assignedTeachers: [],
@@ -162,38 +148,7 @@ const ClassroomForm = ({ onAddClassroom, teachers = [], subjects = [] }) => {
       </div>
 
       <div className="space-y-4">
-        {/* Organization Details */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <input
-              type="text"
-              placeholder="Organisation ID"
-              value={newClassroom.organisationId}
-              onChange={(e) => handleInputChange('organisationId', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#4f39f6] ${
-                errors.organisationId ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.organisationId && (
-              <p className="text-red-500 text-xs mt-1">{errors.organisationId}</p>
-            )}
-          </div>
-
-          <div>
-            <input
-              type="text"
-              placeholder="Admin Name"
-              value={newClassroom.admin}
-              onChange={(e) => handleInputChange('admin', e.target.value)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#4f39f6] ${
-                errors.admin ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.admin && (
-              <p className="text-red-500 text-xs mt-1">{errors.admin}</p>
-            )}
-          </div>
-        </div>
+        
 
         {/* Classroom ID */}
         <div>
@@ -283,73 +238,7 @@ const ClassroomForm = ({ onAddClassroom, teachers = [], subjects = [] }) => {
           )}
         </div>
 
-        {/* Grid Dimensions */}
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Rows:
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="20"
-              value={newClassroom.rows}
-              onChange={(e) => handleInputChange('rows', parseInt(e.target.value) || 1)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#4f39f6] ${
-                errors.rows ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.rows && (
-              <p className="text-red-500 text-xs mt-1">{errors.rows}</p>
-            )}
-          </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Columns:
-            </label>
-            <input
-              type="number"
-              min="1"
-              max="20"
-              value={newClassroom.columns}
-              onChange={(e) => handleInputChange('columns', parseInt(e.target.value) || 1)}
-              className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-[#4f39f6] ${
-                errors.columns ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.columns && (
-              <p className="text-red-500 text-xs mt-1">{errors.columns}</p>
-            )}
-          </div>
-        </div>
-
-        {/* Grid Preview */}
-        <div className="bg-gray-50 p-3 rounded-md">
-          <p className="text-sm text-gray-600 mb-2">
-            Grid Preview: {newClassroom.rows} × {newClassroom.columns} = {newClassroom.rows * newClassroom.columns} cells
-          </p>
-          <div 
-            className="grid gap-1 max-w-md"
-            style={{ 
-              gridTemplateColumns: `repeat(${Math.min(newClassroom.columns, 8)}, 1fr)` 
-            }}
-          >
-            {Array(Math.min(newClassroom.rows * newClassroom.columns, 32)).fill().map((_, index) => (
-              <div
-                key={index}
-                className="w-6 h-6 bg-white border border-gray-300 rounded flex items-center justify-center text-xs"
-              >
-                {index + 1}
-              </div>
-            ))}
-            {newClassroom.rows * newClassroom.columns > 32 && (
-              <div className="col-span-full text-center text-xs text-gray-500">
-                ... and {(newClassroom.rows * newClassroom.columns) - 32} more cells
-              </div>
-            )}
-          </div>
-        </div>
 
         {/* Submit Button */}
         <button

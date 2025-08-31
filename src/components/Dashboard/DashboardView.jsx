@@ -1,6 +1,4 @@
 // src/components/Dashboard/DashboardView.jsx
-// Example of how to update your DashboardView.jsx to work with the new ClassroomForm
-
 import { useState, useEffect } from 'react';
 import { Plus, User, MapPin, BookOpen } from 'lucide-react';
 import StatsCard from './StatsCard';
@@ -33,9 +31,10 @@ const DashboardView = ({
 
   const availableSubjects = subjects.length > 0 ? subjects : defaultSubjects;
 
-  // Load teachers on component mount
+  // Load teachers and classrooms on component mount
   useEffect(() => {
     loadTeachers();
+    loadClassrooms();
   }, []);
 
   const loadTeachers = async () => {
@@ -51,26 +50,63 @@ const DashboardView = ({
     }
   };
 
+  const loadClassrooms = async () => {
+    try {
+      setLoading(true);
+      const classroomsData = await OrganizationService.getClassrooms('default-org-id'); // Replace with actual organization ID
+      setLocalClassrooms(classroomsData.classrooms || []); // Adjust based on actual response structure
+    } catch (error) {
+      console.warn('Could not load classrooms:', error.message);
+      setLocalClassrooms(classrooms);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Validate teacher IDs before submitting
+  const validateTeachers = async (teacherIds) => {
+    try {
+      await OrganizationService.validateTeachersExist(teacherIds);
+      return true;
+    } catch (error) {
+      setError(`Teacher validation failed: ${error.message}`);
+      return false;
+    }
+  };
+
   // Handle adding a new classroom
   const handleAddClassroom = async (classroomData) => {
     try {
       setError(null);
-      
+
+      // Validate teacher IDs
+      const teacherIds = [
+        classroomData.assignedTeacher,
+        ...(classroomData.assignedTeachers || [])
+      ];
+      const isValidTeachers = await validateTeachers(teacherIds);
+      if (!isValidTeachers) {
+        return false;
+      }
+
       // Validate the data before sending
       OrganizationService.validateClassroomData(classroomData);
-      
+
       // Create the classroom
-      const result = await OrganizationService.createClassroom(classroomData);
-      
-      // Update local state (you might want to fetch all classrooms instead)
-      setLocalClassrooms(prev => [...prev, result.organisation.classrooms]);
-      
+      const result = await OrganizationService.createClassroom({
+        ...classroomData,
+        organisationId: 'default-org-id' // Replace with actual organization ID
+      });
+
+      // Update local state with the new classroom
+      setLocalClassrooms(prev => [...prev, result.classroom]); // Adjust based on actual response structure
+
       setSuccessMessage('Classroom created successfully!');
       setTimeout(() => setSuccessMessage(''), 3000);
-      
+
       return true;
     } catch (error) {
-      setError('Failed to create classroom: ' + error.message);
+      setError(`Failed to create classroom: ${error.message}`);
       return false;
     }
   };
@@ -124,6 +160,16 @@ const DashboardView = ({
           className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
         >
           {error}
+        </motion.div>
+      )}
+
+      {/* Loading Indicator */}
+      {loading && (
+        <motion.div 
+          variants={itemVariants}
+          className="text-gray-600 text-center"
+        >
+          Loading...
         </motion.div>
       )}
 

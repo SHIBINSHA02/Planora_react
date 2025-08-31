@@ -10,7 +10,7 @@ import TeacherScheduleSystem from './components/TeacherScheduleSystem';
 import './App.css';
 
 // App Content Component that handles routing
-const AppContent = ({ currentRoute = 'home', navigate }) => {
+const AppContent = ({ currentRoute, navigate }) => {
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -19,6 +19,18 @@ const AppContent = ({ currentRoute = 'home', navigate }) => {
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-indigo-600"></div>
       </div>
     );
+  }
+
+  // Handle route protection - redirect to login if accessing dashboard without auth
+  if (currentRoute === 'dashboard' && !user) {
+    navigate('login');
+    return null;
+  }
+
+  // Redirect authenticated users from login/signup to dashboard
+  if ((currentRoute === 'login' || currentRoute === 'signup') && user) {
+    navigate('dashboard');
+    return null;
   }
 
   switch (currentRoute) {
