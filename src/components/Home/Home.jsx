@@ -177,6 +177,15 @@ const Homepage = ({ navigate }) => {
                   <span>{user ? 'Go to Dashboard' : 'Start Free Trial'}</span>
                   <ArrowRight className="h-5 w-5" />
                 </button>
+                {user && (
+                  <button
+                    onClick={() => navigate('organization')}
+                    className="border-2 border-indigo-600 text-indigo-600 px-8 py-4 rounded-lg font-semibold hover:bg-indigo-50 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <span>Manage Organizations</span>
+                    <Users className="h-5 w-5" />
+                  </button>
+                )}
                 <button className="border-2 border-gray-300 text-gray-700 px-8 py-4 rounded-lg font-semibold hover:border-indigo-600 hover:text-indigo-600 transition-colors">
                   Watch Demo
                 </button>

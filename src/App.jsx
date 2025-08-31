@@ -1,12 +1,14 @@
 // src/App.jsx
 import React from 'react';
 import { AuthProvider, useAuth } from './components/Auth/Auth';
+import { OrganizationProvider } from './contexts/OrganizationContext';
 import Router from './components/Router';
 import Homepage from './components/Home/Home';
 import LoginPage from './components/Auth/login';
 import SignupPage from './components/Auth/signup';
 import ProtectedRoute from './components/ProtectedRoute';
 import TeacherScheduleSystem from './components/TeacherScheduleSystem';
+import OrganizationManagement from './components/Organization/OrganizationManagement';
 import './App.css';
 
 // App Content Component that handles routing
@@ -38,6 +40,8 @@ const AppContent = ({ currentRoute, navigate }) => {
       return <LoginPage navigate={navigate} />;
     case 'signup':
       return <SignupPage navigate={navigate} />;
+    case 'organization':
+      return <OrganizationManagement navigate={navigate} />;
     case 'dashboard':
       return (
         <ProtectedRoute currentRoute={currentRoute} navigate={navigate}>
@@ -54,9 +58,11 @@ const AppContent = ({ currentRoute, navigate }) => {
 const App = () => {
   return (
     <AuthProvider>
-      <Router>
-        <AppContent />
-      </Router>
+      <OrganizationProvider>
+        <Router>
+          <AppContent />
+        </Router>
+      </OrganizationProvider>
     </AuthProvider>
   );
 };

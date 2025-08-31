@@ -8,6 +8,7 @@ const Router = ({ children }) => {
     if (path === '/dashboard') return 'dashboard';
     if (path === '/login') return 'login';
     if (path === '/signup') return 'signup';
+    if (path === '/organization') return 'organization';
     return 'home';
   };
 
@@ -27,6 +28,9 @@ const Router = ({ children }) => {
         break;
       case 'signup':
         path = '/signup';
+        break;
+      case 'organization':
+        path = '/organization';
         break;
       case 'home':
       default:

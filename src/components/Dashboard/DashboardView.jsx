@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 import TeacherManagement from './TeacherManagement';
 import TeacherService from '../../services/teacherService';
 import OrganizationService from '../../services/organizationService.js';
+import { useOrganization } from '../../contexts/OrganizationContext';
 
 const DashboardView = ({
   teachers = [],
@@ -17,6 +18,7 @@ const DashboardView = ({
   clearAllSchedules,
   exportData,
 }) => {
+  const { currentOrganization } = useOrganization();
   const [localTeachers, setLocalTeachers] = useState(teachers);
   const [localClassrooms, setLocalClassrooms] = useState(classrooms);
   const [loading, setLoading] = useState(false);
@@ -53,7 +55,8 @@ const DashboardView = ({
   const loadClassrooms = async () => {
     try {
       setLoading(true);
-      const classroomsData = await OrganizationService.getClassrooms('default-org-id'); // Replace with actual organization ID
+      const orgId = currentOrganization?.id || 'default-org-id';
+      const classroomsData = await OrganizationService.getClassrooms(orgId);
       setLocalClassrooms(classroomsData.classrooms || []); // Adjust based on actual response structure
     } catch (error) {
       console.warn('Could not load classrooms:', error.message);
@@ -95,7 +98,7 @@ const DashboardView = ({
       // Create the classroom
       const result = await OrganizationService.createClassroom({
         ...classroomData,
-        organisationId: 'default-org-id' // Replace with actual organization ID
+        organisationId: currentOrganization?.id || 'default-org-id'
       });
 
       // Update local state with the new classroom
@@ -138,7 +141,23 @@ const DashboardView = ({
     >
       {/* Header */}
       <motion.div variants={itemVariants}>
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">Dashboard</h1>
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
+            {currentOrganization && (
+              <p className="text-lg text-indigo-600 font-medium">
+                {currentOrganization.name}
+              </p>
+            )}
+          </div>
+          <button
+            onClick={() => window.location.href = '/organization'}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+          >
+            <Building2 className="h-4 w-4" />
+            <span>Manage Organizations</span>
+          </button>
+        </div>
         <p className="text-gray-600 mb-6">
           Manage your teachers, classrooms, and schedules efficiently
         </p>

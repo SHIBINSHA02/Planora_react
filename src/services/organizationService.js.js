@@ -23,6 +23,33 @@ class OrganizationService {
     return teacherIds.map(id => typeof id === 'string' ? id : String(id));
   }
 
+  // Create a new organization
+  static async createOrganization(organizationData) {
+    try {
+      // Validate organization data first
+      this.validateOrganizationData(organizationData);
+
+      const response = await axios.post(`${API_BASE_URL}/create`, organizationData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000,
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error creating organization:', error);
+      if (error.response) {
+        const errorMessage = error.response.data?.message || error.response.data?.error || `HTTP error! status: ${error.response.status}`;
+        throw new Error(errorMessage);
+      } else if (error.request) {
+        throw new Error('No response from server. Check if the backend is running on port 3000.');
+      } else {
+        throw new Error(`Request setup error: ${error.message}`);
+      }
+    }
+  }
+
   // Create a new classroom within an organization
   static async createClassroom(classroomData) {
     try {
@@ -276,6 +303,45 @@ class OrganizationService {
     return true;
   }
 
+  // Helper method to validate organization data before creating
+  static validateOrganizationData(organizationData) {
+    const required = [
+      'name',
+      'admin',
+      'periodCount',
+      'totalDays',
+      'scheduleRows',
+      'scheduleColumns'
+    ];
+
+    // Check for missing or empty fields
+    for (const field of required) {
+      if (this.isEmpty(organizationData[field])) {
+        throw new Error(`${field} is required and cannot be empty`);
+      }
+    }
+
+    // Validate period count
+    if (!Number.isInteger(organizationData.periodCount) || organizationData.periodCount < 1 || organizationData.periodCount > 12) {
+      throw new Error('periodCount must be an integer between 1 and 12');
+    }
+
+    // Validate total days
+    if (!Number.isInteger(organizationData.totalDays) || organizationData.totalDays < 1 || organizationData.totalDays > 7) {
+      throw new Error('totalDays must be an integer between 1 and 7');
+    }
+
+    // Validate schedule dimensions
+    if (!Number.isInteger(organizationData.scheduleRows) || organizationData.scheduleRows < 1 || organizationData.scheduleRows > 20) {
+      throw new Error('scheduleRows must be an integer between 1 and 20');
+    }
+    if (!Number.isInteger(organizationData.scheduleColumns) || organizationData.scheduleColumns < 1 || organizationData.scheduleColumns > 20) {
+      throw new Error('scheduleColumns must be an integer between 1 and 20');
+    }
+
+    return true;
+  }
+
   // Helper method to validate classroom data before creating
   static validateClassroomData(classroomData) {
     const required = [
@@ -512,6 +578,93 @@ class OrganizationService {
     } catch (error) {
       console.error('Error formatting classroom with teacher names:', error);
       return classroom;
+    }
+  }
+
+  // Get all organizations for a user
+  static async getOrganizations() {
+    try {
+      const response = await axios.get(`${API_BASE_URL}/list`, {
+        timeout: 5000
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching organizations:', error);
+      if (error.response) {
+        throw new Error(error.response.data?.message || `HTTP error! status: ${error.response.status}`);
+      }
+      throw new Error('Failed to fetch organizations');
+    }
+  }
+
+  // Get organization by ID
+  static async getOrganization(organizationId) {
+    try {
+      if (this.isEmpty(organizationId)) {
+        throw new Error('Organization ID is required');
+      }
+
+      const response = await axios.get(`${API_BASE_URL}/${organizationId}`, {
+        timeout: 5000
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error fetching organization:', error);
+      if (error.response && error.response.status === 404) {
+        throw new Error('Organization not found');
+      }
+      throw new Error('Failed to fetch organization details');
+    }
+  }
+
+  // Update organization
+  static async updateOrganization(organizationId, updateData) {
+    try {
+      if (this.isEmpty(organizationId)) {
+        throw new Error('Organization ID is required');
+      }
+
+      const response = await axios.put(`${API_BASE_URL}/${organizationId}`, updateData, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 10000
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error updating organization:', error);
+      if (error.response) {
+        if (error.response.status === 404) {
+          throw new Error('Organization not found');
+        }
+        throw new Error(error.response.data?.message || 'Failed to update organization');
+      }
+      throw new Error('Failed to update organization');
+    }
+  }
+
+  // Delete organization
+  static async deleteOrganization(organizationId) {
+    try {
+      if (this.isEmpty(organizationId)) {
+        throw new Error('Organization ID is required');
+      }
+
+      const response = await axios.delete(`${API_BASE_URL}/${organizationId}`, {
+        timeout: 5000
+      });
+
+      return response.data;
+    } catch (error) {
+      console.error('Error deleting organization:', error);
+      if (error.response) {
+        if (error.response.status === 404) {
+          throw new Error('Organization not found');
+        }
+        throw new Error(error.response.data?.message || 'Failed to delete organization');
+      }
+      throw new Error('Failed to delete organization');
     }
   }
 
