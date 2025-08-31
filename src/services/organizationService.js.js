@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api/organization';
+const API_BASE_URL = 'http://localhost:3000/api/organisation';
 
 class OrganizationService {
   // Create a new classroom within an organization
