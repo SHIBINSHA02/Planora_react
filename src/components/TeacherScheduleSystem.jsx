@@ -8,7 +8,7 @@ import TeacherTimetableView from './TeacherTimetableView';
 import ErrorBoundary from './ErrorBoundary';
 import { useScheduleData } from './hooks/useScheduleData';
 
-const TeacherScheduleSystem = () => {
+const TeacherScheduleSystem = ({ navigate }) => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [selectedClassroom, setSelectedClassroom] = useState('');
@@ -57,7 +57,7 @@ const TeacherScheduleSystem = () => {
               autoAssignTeachers={autoAssignTeachers}
               clearAllSchedules={clearAllSchedules}
               exportData={exportData}
-            
+              navigate={navigate}
             />
           </ErrorBoundary>
         )}

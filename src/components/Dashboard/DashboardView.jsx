@@ -17,8 +17,9 @@ const DashboardView = ({
   autoAssignTeachers,
   clearAllSchedules,
   exportData,
+  navigate,
 }) => {
-  const { currentOrganization } = useOrganization();
+  const { currentOrganization, loading: orgLoading, error: orgError } = useOrganization();
   const [localTeachers, setLocalTeachers] = useState(teachers);
   const [localClassrooms, setLocalClassrooms] = useState(classrooms);
   const [loading, setLoading] = useState(false);
@@ -35,9 +36,26 @@ const DashboardView = ({
 
   // Load teachers and classrooms on component mount
   useEffect(() => {
-    loadTeachers();
-    loadClassrooms();
-  }, []);
+    if (currentOrganization) {
+      loadTeachers();
+      loadClassrooms();
+    }
+  }, [currentOrganization]);
+
+  // Handle organization loading and errors
+  useEffect(() => {
+    if (orgError) {
+      setError(`Organization Error: ${orgError}`);
+    }
+  }, [orgError]);
+
+  // Redirect to organization management if no organization is selected
+  useEffect(() => {
+    if (!orgLoading && !currentOrganization && navigate) {
+      console.warn('No organization selected, redirecting to organization management');
+      navigate('organization');
+    }
+  }, [currentOrganization, orgLoading, navigate]);
 
   const loadTeachers = async () => {
     try {
@@ -53,13 +71,19 @@ const DashboardView = ({
   };
 
   const loadClassrooms = async () => {
+    if (!currentOrganization) {
+      console.warn('Cannot load classrooms: No organization selected');
+      return;
+    }
+
     try {
       setLoading(true);
-      const orgId = currentOrganization?.id || 'default-org-id';
+      const orgId = currentOrganization.id;
       const classroomsData = await OrganizationService.getClassrooms(orgId);
       setLocalClassrooms(classroomsData.classrooms || []); // Adjust based on actual response structure
     } catch (error) {
       console.warn('Could not load classrooms:', error.message);
+      setError(`Failed to load classrooms: ${error.message}`);
       setLocalClassrooms(classrooms);
     } finally {
       setLoading(false);
@@ -79,6 +103,11 @@ const DashboardView = ({
 
   // Handle adding a new classroom
   const handleAddClassroom = async (classroomData) => {
+    if (!currentOrganization) {
+      setError('No organization selected. Please select an organization first.');
+      return false;
+    }
+
     try {
       setError(null);
 
@@ -98,7 +127,7 @@ const DashboardView = ({
       // Create the classroom
       const result = await OrganizationService.createClassroom({
         ...classroomData,
-        organisationId: currentOrganization?.id || 'default-org-id'
+        organisationId: currentOrganization.id
       });
 
       // Update local state with the new classroom
@@ -132,6 +161,41 @@ const DashboardView = ({
     visible: { opacity: 1, y: 0 }
   };
 
+  // Show loading state while organization is being loaded
+  if (orgLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading organization...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no organization is available
+  if (!currentOrganization) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center max-w-md mx-auto p-6">
+          <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Organization Selected</h2>
+          <p className="text-gray-600 mb-6">
+            You need to select or create an organization before accessing the dashboard.
+          </p>
+          {navigate && (
+            <button
+              onClick={() => navigate('organization')}
+              className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
+            >
+              Manage Organizations
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       className="space-y-8 p-6 bg-gray-50 min-h-screen"
@@ -144,19 +208,19 @@ const DashboardView = ({
         <div className="flex items-center justify-between mb-4">
           <div>
             <h1 className="text-3xl font-bold text-gray-800">Dashboard</h1>
-            {currentOrganization && (
-              <p className="text-lg text-indigo-600 font-medium">
-                {currentOrganization.name}
-              </p>
-            )}
+            <p className="text-lg text-indigo-600 font-medium">
+              {currentOrganization.name}
+            </p>
           </div>
-          <button
-            onClick={() => window.location.href = '/organization'}
-            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
-          >
-            <Building2 className="h-4 w-4" />
-            <span>Manage Organizations</span>
-          </button>
+          {navigate && (
+            <button
+              onClick={() => navigate('organization')}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors flex items-center space-x-2"
+            >
+              <Building2 className="h-4 w-4" />
+              <span>Manage Organizations</span>
+            </button>
+          )}
         </div>
         <p className="text-gray-600 mb-6">
           Manage your teachers, classrooms, and schedules efficiently

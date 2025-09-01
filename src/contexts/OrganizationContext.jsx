@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import OrganizationService from '../services/organizationService.js';
+import OrganizationService from '../services/organizationService.js.js';
 
 const OrganizationContext = createContext();
 
