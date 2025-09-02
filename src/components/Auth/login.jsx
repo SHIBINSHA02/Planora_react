@@ -7,7 +7,7 @@ import { useAuth } from './Auth';
 
 const LoginPage = ({ navigate }) => {
   const { login } = useAuth();
-  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [formData, setFormData] = useState({ usernameOrEmail: '', password: '' });
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(false);
 
@@ -24,7 +24,8 @@ const LoginPage = ({ navigate }) => {
     setErrors({});
 
     try {
-      await login(formData.email, formData.password);
+      await login(formData.usernameOrEmail, formData.password);
+      if (navigate) navigate('panel');
     } catch (error) {
       setErrors({ general: error.message });
     } finally {
@@ -52,24 +53,18 @@ const LoginPage = ({ navigate }) => {
             </div>
           )}
 
-          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-            <p className="text-sm text-blue-800 font-medium mb-2">Demo Accounts:</p>
-            <p className="text-xs text-blue-600">Teacher: teacher@school.com / password123</p>
-            <p className="text-xs text-blue-600">Admin: admin@school.com / admin123</p>
-          </div>
+          
 
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Email Address
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Username or Email</label>
               <input
-                type="email"
-                name="email"
-                value={formData.email}
+                type="text"
+                name="usernameOrEmail"
+                value={formData.usernameOrEmail}
                 onChange={handleChange}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent transition-colors"
-                placeholder="Enter your email"
+                placeholder="Enter your username or email"
                 required
               />
             </div>

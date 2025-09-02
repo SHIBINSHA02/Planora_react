@@ -2,6 +2,7 @@
 // src/components/Auth/Auth.js
 // src/auth.js
 import React, { useState, useEffect, createContext, useContext } from 'react';
+import AuthService from '../../services/authService';
 
 // Auth Context
 const AuthContext = createContext();
@@ -25,44 +26,18 @@ export const AuthProvider = ({ children }) => {
     setLoading(false);
   }, []);
 
-  const login = (email, password) => {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        // Demo users for testing
-        const demoUsers = [
-          { id: 1, email: 'teacher@school.com', password: 'password123', name: 'John Doe' },
-          { id: 2, email: 'admin@school.com', password: 'admin123', name: 'Jane Smith' }
-        ];
-        
-        const foundUser = demoUsers.find(u => u.email === email && u.password === password);
-        
-        if (foundUser) {
-          const { password: _, ...userWithoutPassword } = foundUser;
-          setUser(userWithoutPassword);
-          localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-          resolve(userWithoutPassword);
-        } else {
-          reject(new Error('Invalid email or password'));
-        }
-      }, 1000);
-    });
+  const login = async (usernameOrEmail, password) => {
+    const { user: userResponse } = await AuthService.login({ usernameOrEmail, password });
+    setUser(userResponse);
+    localStorage.setItem('user', JSON.stringify(userResponse));
+    return userResponse;
   };
 
-  const signup = (userData) => {
-    // Simulate API call
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const newUser = {
-          id: Date.now(),
-          ...userData
-        };
-        const { password: _, ...userWithoutPassword } = newUser;
-        setUser(userWithoutPassword);
-        localStorage.setItem('user', JSON.stringify(userWithoutPassword));
-        resolve(userWithoutPassword);
-      }, 1000);
-    });
+  const signup = async ({ username, email, password, firstName, lastName }) => {
+    const { user: registeredUser } = await AuthService.register({ username, email, password, firstName, lastName });
+    setUser(registeredUser);
+    localStorage.setItem('user', JSON.stringify(registeredUser));
+    return registeredUser;
   };
 
   const logout = () => {
