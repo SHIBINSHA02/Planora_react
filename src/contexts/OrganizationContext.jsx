@@ -32,26 +32,12 @@ export const OrganizationProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // The service now handles API failures gracefully and returns sample data
       const orgData = await OrganizationService.getOrganization(organizationId);
       setCurrentOrganization(orgData);
       
     } catch (error) {
       console.error('Error loading organization:', error);
-      setError('Failed to load organization. Using demo data.');
-      
-      // Final fallback to sample data
-      const sampleOrg = {
-        id: organizationId,
-        name: 'Sample Organization',
-        admin: 'Admin User',
-        periodCount: 8,
-        totalDays: 5,
-        scheduleRows: 7,
-        scheduleColumns: 8,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      setCurrentOrganization(sampleOrg);
+      setError('Failed to load organization.');
     } finally {
       setLoading(false);
     }
@@ -62,7 +48,6 @@ export const OrganizationProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // The service now handles API failures gracefully and returns mock data
       const result = await OrganizationService.createOrganization(organizationData);
       const newOrg = result.organization || result;
       
@@ -76,22 +61,8 @@ export const OrganizationProvider = ({ children }) => {
       
     } catch (error) {
       console.error('Error creating organization:', error);
-      setError('Failed to create organization. Using demo data.');
-      
-      // Final fallback to local creation
-      const newOrg = {
-        id: `org-${Date.now()}`,
-        ...organizationData,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
-      
-      setCurrentOrganization(newOrg);
-      setOrganizations(prev => [...prev, newOrg]);
-      
-      // Save to localStorage
-      localStorage.setItem('currentOrganizationId', newOrg.id);
-      
-      return newOrg;
+      setError('Failed to create organization.');
+      throw error;
     } finally {
       setLoading(false);
     }
@@ -118,38 +89,12 @@ export const OrganizationProvider = ({ children }) => {
       setLoading(true);
       setError(null);
       
-      // The service now handles API failures gracefully and returns sample data
       const orgsData = await OrganizationService.getOrganizations();
       setOrganizations(orgsData.organizations || orgsData || []);
       
     } catch (error) {
       console.error('Error loading organizations:', error);
-      setError('Failed to load organizations. Using demo data.');
-      
-      // Final fallback to sample data
-      const sampleOrgs = [
-        {
-          id: 'org-001',
-          name: 'Greenwood High School',
-          admin: 'John Smith',
-          periodCount: 8,
-          totalDays: 5,
-          scheduleRows: 7,
-          scheduleColumns: 8,
-          createdAt: '2024-01-15'
-        },
-        {
-          id: 'org-002',
-          name: 'Riverside Academy',
-          admin: 'Sarah Brown',
-          periodCount: 6,
-          totalDays: 6,
-          scheduleRows: 6,
-          scheduleColumns: 6,
-          createdAt: '2024-01-20'
-        }
-      ];
-      setOrganizations(sampleOrgs);
+      setError('Failed to load organizations.');
     } finally {
       setLoading(false);
       setIsLoadingOrganizations(false);

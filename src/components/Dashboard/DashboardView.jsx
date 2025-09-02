@@ -52,7 +52,6 @@ const DashboardView = ({
   // Redirect to organization management if no organization is selected
   useEffect(() => {
     if (!orgLoading && !currentOrganization && navigate) {
-      console.warn('No organization selected, redirecting to organization management');
       navigate('organization');
     }
   }, [currentOrganization, orgLoading, navigate]);
@@ -175,28 +174,8 @@ const DashboardView = ({
     );
   }
 
-  // Show error state if no organization is available
-  if (!currentOrganization) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center max-w-md mx-auto p-6">
-          <Building2 className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">No Organization Selected</h2>
-          <p className="text-gray-600 mb-6">
-            You need to select or create an organization before accessing the dashboard.
-          </p>
-          {navigate && (
-            <button
-              onClick={() => navigate('organization')}
-              className="bg-indigo-600 text-white px-6 py-3 rounded-lg hover:bg-indigo-700 transition-colors"
-            >
-              Manage Organizations
-            </button>
-          )}
-        </div>
-      </div>
-    );
-  }
+  // Hard block dashboard when no organization
+  if (!currentOrganization) return null;
 
   return (
     <motion.div

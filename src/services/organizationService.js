@@ -39,16 +39,10 @@ class OrganizationService {
 
       return response.data;
     } catch (error) {
-      console.warn('Could not create organization via API:', error.message);
-      
-      // Return mock organization data instead of throwing error
-      return {
-        organization: {
-          id: `org-${Date.now()}`,
-          ...organizationData,
-          createdAt: new Date().toISOString().split('T')[0]
-        }
-      };
+      if (error.response) {
+        throw new Error(error.response.data?.message || `HTTP error! status: ${error.response.status}`);
+      }
+      throw new Error(error.message || 'Failed to create organization');
     }
   }
 
@@ -140,6 +134,7 @@ class OrganizationService {
       if (this.isEmpty(organizationId)) {
         throw new Error('Organization ID is required');
       }
+      // Not supported in backend; return empty, but do not mask errors
       return { classrooms: [] };
     } catch (error) {
       console.error('Error fetching classrooms (not supported):', error);
@@ -443,33 +438,10 @@ class OrganizationService {
       });
       return response.data;
     } catch (error) {
-      console.warn('Could not fetch organizations from API:', error.message);
-      
-      // Return sample data instead of throwing error
-      return {
-        organizations: [
-          {
-            id: 'org-001',
-            name: 'Greenwood High School',
-            admin: 'John Smith',
-            periodCount: 8,
-            totalDays: 5,
-            scheduleRows: 7,
-            scheduleColumns: 8,
-            createdAt: '2024-01-15'
-          },
-          {
-            id: 'org-002',
-            name: 'Riverside Academy',
-            admin: 'Sarah Brown',
-            periodCount: 6,
-            totalDays: 6,
-            scheduleRows: 6,
-            scheduleColumns: 6,
-            createdAt: '2024-01-20'
-          }
-        ]
-      };
+      if (error.response) {
+        throw new Error(error.response.data?.message || `HTTP error! status: ${error.response.status}`);
+      }
+      throw new Error(error.message || 'Failed to fetch organizations');
     }
   }
 
@@ -485,19 +457,10 @@ class OrganizationService {
       });
       return response.data;
     } catch (error) {
-      console.warn('Could not fetch organization from API:', error.message);
-      
-      // Return sample organization data instead of throwing error
-      return {
-        id: organizationId,
-        name: 'Sample Organization',
-        admin: 'Admin User',
-        periodCount: 8,
-        totalDays: 5,
-        scheduleRows: 7,
-        scheduleColumns: 8,
-        createdAt: new Date().toISOString().split('T')[0]
-      };
+      if (error.response) {
+        throw new Error(error.response.data?.message || `HTTP error! status: ${error.response.status}`);
+      }
+      throw new Error(error.message || 'Failed to fetch organization');
     }
   }
 
