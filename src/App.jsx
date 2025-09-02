@@ -10,6 +10,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 import TeacherScheduleSystem from './components/TeacherScheduleSystem';
 import OrganizationManagement from './components/Organization/OrganizationManagement';
 import Panel from './components/Panel/Panel';
+import ErrorBoundary from './components/ErrorBoundary';
 import './App.css';
 
 // App Content Component that handles routing
@@ -81,13 +82,15 @@ const AppContent = ({ currentRoute, navigate }) => {
 // Main App Component
 const App = () => {
   return (
-    <AuthProvider>
-      <OrganizationProvider>
-        <Router>
-          <AppContent />
-        </Router>
-      </OrganizationProvider>
-    </AuthProvider>
+    <ErrorBoundary>
+      <AuthProvider>
+        <OrganizationProvider>
+          <Router>
+            <AppContent />
+          </Router>
+        </OrganizationProvider>
+      </AuthProvider>
+    </ErrorBoundary>
   );
 };
 

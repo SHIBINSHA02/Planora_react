@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useAuth } from '../Auth/Auth';
 import { useOrganization } from '../../contexts/OrganizationContext';
 import TeacherService from '../../services/teacherService';
+import UserService from '../../services/userService';
+import OrganizationService from '../../services/organizationService';
 
 const Panel = ({ navigate }) => {
   const { user } = useAuth();
@@ -10,18 +12,29 @@ const Panel = ({ navigate }) => {
   const [teacher, setTeacher] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [orgsForUser, setOrgsForUser] = useState([]);
+  const [scheduleSearch, setScheduleSearch] = useState({ organisationId: '', classroomId: '' });
+  const [foundClassroom, setFoundClassroom] = useState(null);
 
   useEffect(() => {
     const init = async () => {
       try {
         await loadOrganizations();
-        if (user?.id || user?.teacherId) {
+
+        // Fetch organizations accessible to this user
+        if (user?.userId) {
+          try {
+            const data = await UserService.getUserOrganizations(user.userId);
+            setOrgsForUser(data.organizations || []);
+          } catch {}
+        }
+
+        // If current organization and teacherId known, fetch teacher
+        if ((user?.id || user?.teacherId) && (currentOrganization?.id || currentOrganization?.organisationId)) {
           const teacherId = user.teacherId || user.id;
-          const orgId = currentOrganization?.id || currentOrganization?.organisationId || organizations?.[0]?.id || organizations?.[0]?.organisationId;
-          if (orgId) {
-            const t = await TeacherService.getTeacherById(orgId, teacherId);
-            setTeacher(t);
-          }
+          const orgId = currentOrganization.id || currentOrganization.organisationId;
+          const t = await TeacherService.getTeacherById(orgId, teacherId);
+          setTeacher(t);
         }
       } catch (e) {
         setError(e.message || 'Failed to load panel');
@@ -30,11 +43,47 @@ const Panel = ({ navigate }) => {
       }
     };
     init();
-  }, [user, loadOrganizations]);
+  }, [user, loadOrganizations, currentOrganization]);
 
   const handleSelectOrganization = (organisationId) => {
     switchOrganization(organisationId);
     navigate('dashboard');
+  };
+
+  const handleCreateTeacher = async () => {
+    try {
+      setError(null);
+      if (!user?.userId) throw new Error('No user ID');
+      const payload = {
+        teacher: {
+          id: Date.now(),
+          name: `${user.firstName || ''} ${user.lastName || ''}`.trim() || user.username || user.email,
+          email: user.email,
+          phone: '',
+          bio: '',
+          profilePicture: '',
+          globalPermissions: { view: true, edit: false }
+        }
+      };
+      const created = await UserService.createTeacherForUser(user.userId, payload);
+      setTeacher(created.teacher || created);
+    } catch (e) {
+      setError(e.message || 'Failed to create teacher profile');
+    }
+  };
+
+  const handleSearchSchedule = async (e) => {
+    e.preventDefault();
+    try {
+      setError(null);
+      setFoundClassroom(null);
+      const { organisationId, classroomId } = scheduleSearch;
+      if (!organisationId || !classroomId) throw new Error('Enter both organisationId and classroomId');
+      const cls = await OrganizationService.getClassroom(organisationId, classroomId);
+      setFoundClassroom(cls);
+    } catch (e) {
+      setError(e.message || 'Failed to fetch classroom');
+    }
   };
 
   if (loading) {
@@ -62,7 +111,10 @@ const Panel = ({ navigate }) => {
           <div className="lg:col-span-2 bg-white rounded-lg shadow p-6">
             <h2 className="text-lg font-semibold mb-4">My Schedule {currentOrganization ? `(Org: ${currentOrganization.name || currentOrganization.id})` : ''}</h2>
             {!teacher ? (
-              <p className="text-gray-600">No teacher profile found.</p>
+              <div className="text-gray-700">
+                <p className="mb-3">No teacher profile linked to your account.</p>
+                <button onClick={handleCreateTeacher} className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Create Teacher Profile</button>
+              </div>
             ) : (
               <div className="overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200">
@@ -93,7 +145,23 @@ const Panel = ({ navigate }) => {
             <h2 className="text-lg font-semibold mb-4">Organizations</h2>
             {error && <p className="text-sm text-red-600 mb-2">{error}</p>}
             <div className="space-y-3">
-              {(organizations || []).map((org) => (
+              {orgsForUser && orgsForUser.length > 0 && (
+                <div className="p-3 border rounded-md">
+                  <p className="text-sm font-medium text-gray-900 mb-2">Your Accessible Organizations</p>
+                  <div className="space-y-2">
+                    {orgsForUser.map((org) => (
+                      <div key={org.organisationId} className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-gray-900">{org.organisationName || org.name || org.organisationId}</p>
+                          <p className="text-xs text-gray-500">{org.organisationId}</p>
+                        </div>
+                        <button onClick={() => handleSelectOrganization(org.organisationId)} className="px-3 py-1.5 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Open</button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+              {(Array.isArray(organizations) ? organizations : []).map((org) => (
                 <div key={org.id || org.organisationId} className="flex items-center justify-between p-3 border rounded-md">
                   <div>
                     <p className="text-sm font-medium text-gray-900">{org.name}</p>
@@ -107,7 +175,7 @@ const Panel = ({ navigate }) => {
                   </button>
                 </div>
               ))}
-              {(!organizations || organizations.length === 0) && (
+              {(!Array.isArray(organizations) || organizations.length === 0) && (
                 <div className="text-center">
                   <p className="text-gray-600 text-sm mb-3">No organizations found for your account.</p>
                   <button
@@ -120,6 +188,53 @@ const Panel = ({ navigate }) => {
               )}
             </div>
           </div>
+        </div>
+
+        <div className="mt-6 bg-white rounded-lg shadow p-6">
+          <h2 className="text-lg font-semibold mb-4">Find Classroom Schedule</h2>
+          <form onSubmit={handleSearchSchedule} className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <input
+              type="text"
+              placeholder="Organisation ID (e.g., org-1)"
+              value={scheduleSearch.organisationId}
+              onChange={(e) => setScheduleSearch(s => ({ ...s, organisationId: e.target.value }))}
+              className="px-3 py-2 border rounded-md"
+            />
+            <input
+              type="text"
+              placeholder="Classroom ID (e.g., cls-1)"
+              value={scheduleSearch.classroomId}
+              onChange={(e) => setScheduleSearch(s => ({ ...s, classroomId: e.target.value }))}
+              className="px-3 py-2 border rounded-md"
+            />
+            <button type="submit" className="px-4 py-2 bg-indigo-600 text-white rounded-md hover:bg-indigo-700">Search</button>
+          </form>
+          {foundClassroom && (
+            <div className="mt-4">
+              <p className="text-sm text-gray-700 mb-2">Classroom: {foundClassroom.classroomName || foundClassroom.classroomId}</p>
+              <p className="text-xs text-gray-500 mb-3">ID: {foundClassroom.classroomId}</p>
+              <div className="overflow-x-auto">
+                <table className="min-w-full divide-y divide-gray-200">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cell #</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teachers</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subjects</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-gray-200">
+                    {(foundClassroom.grid || []).map((cell, idx) => (
+                      <tr key={idx}>
+                        <td className="px-4 py-2 text-sm text-gray-700">{idx + 1}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{Array.isArray(cell.teachers) ? cell.teachers.length : 0}</td>
+                        <td className="px-4 py-2 text-sm text-gray-700">{Array.isArray(cell.subjects) ? cell.subjects.join(', ') : ''}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </div>
