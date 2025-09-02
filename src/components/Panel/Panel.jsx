@@ -108,7 +108,15 @@ const Panel = ({ navigate }) => {
                 </div>
               ))}
               {(!organizations || organizations.length === 0) && (
-                <p className="text-gray-600 text-sm">No organizations found.</p>
+                <div className="text-center">
+                  <p className="text-gray-600 text-sm mb-3">No organizations found for your account.</p>
+                  <button
+                    onClick={() => navigate('organization')}
+                    className="px-4 py-2 text-sm bg-indigo-600 text-white rounded-md hover:bg-indigo-700"
+                  >
+                    Create Organization
+                  </button>
+                </div>
               )}
             </div>
           </div>

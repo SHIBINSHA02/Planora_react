@@ -38,6 +38,9 @@ export const OrganizationProvider = ({ children }) => {
     } catch (error) {
       console.error('Error loading organization:', error);
       setError('Failed to load organization.');
+      // Clear invalid saved organization to avoid loops
+      localStorage.removeItem('currentOrganizationId');
+      setCurrentOrganization(null);
     } finally {
       setLoading(false);
     }

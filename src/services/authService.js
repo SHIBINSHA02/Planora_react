@@ -1,7 +1,7 @@
 // src/services/authService.js
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:3000/api/auth';
+const API_BASE_URL = 'http://localhost:3000/api';
 
 class AuthService {
   static async register({ username, email, password, firstName, lastName }) {
