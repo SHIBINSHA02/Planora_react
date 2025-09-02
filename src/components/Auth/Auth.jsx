@@ -31,8 +31,8 @@ export const AuthProvider = ({ children }) => {
       setTimeout(() => {
         // Demo users for testing
         const demoUsers = [
-          { id: 1, email: 'teacher@school.com', password: 'password123', name: 'John Doe', role: 'teacher' },
-          { id: 2, email: 'admin@school.com', password: 'admin123', name: 'Jane Smith', role: 'admin' }
+          { id: 1, email: 'teacher@school.com', password: 'password123', name: 'John Doe' },
+          { id: 2, email: 'admin@school.com', password: 'admin123', name: 'Jane Smith' }
         ];
         
         const foundUser = demoUsers.find(u => u.email === email && u.password === password);
@@ -55,8 +55,7 @@ export const AuthProvider = ({ children }) => {
       setTimeout(() => {
         const newUser = {
           id: Date.now(),
-          ...userData,
-          role: 'teacher'
+          ...userData
         };
         const { password: _, ...userWithoutPassword } = newUser;
         setUser(userWithoutPassword);

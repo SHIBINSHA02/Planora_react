@@ -6,6 +6,7 @@ const Router = ({ children }) => {
   const getInitialRoute = () => {
     const path = window.location.pathname;
     if (path === '/dashboard') return 'dashboard';
+    if (path === '/panel') return 'panel';
     if (path === '/login') return 'login';
     if (path === '/signup') return 'signup';
     if (path === '/organization') return 'organization';
@@ -22,6 +23,9 @@ const Router = ({ children }) => {
     switch (route) {
       case 'dashboard':
         path = '/dashboard';
+        break;
+      case 'panel':
+        path = '/panel';
         break;
       case 'login':
         path = '/login';

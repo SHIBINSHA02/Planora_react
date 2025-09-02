@@ -9,6 +9,7 @@ import SignupPage from './components/Auth/signup';
 import ProtectedRoute from './components/ProtectedRoute';
 import TeacherScheduleSystem from './components/TeacherScheduleSystem';
 import OrganizationManagement from './components/Organization/OrganizationManagement';
+import Panel from './components/Panel/Panel';
 import './App.css';
 
 // App Content Component that handles routing
@@ -24,8 +25,12 @@ const AppContent = ({ currentRoute, navigate }) => {
     );
   }
 
-  // Handle route protection - redirect to login if accessing dashboard without auth
+  // Handle route protection - redirect to login if accessing dashboard/panel without auth
   if (currentRoute === 'dashboard' && !user) {
+    navigate('login');
+    return null;
+  }
+  if (currentRoute === 'panel' && !user) {
     navigate('login');
     return null;
   }
@@ -55,6 +60,12 @@ const AppContent = ({ currentRoute, navigate }) => {
       return <SignupPage navigate={navigate} />;
     case 'organization':
       return <OrganizationManagement navigate={navigate} />;
+    case 'panel':
+      return (
+        <ProtectedRoute currentRoute={currentRoute} navigate={navigate}>
+          <Panel navigate={navigate} />
+        </ProtectedRoute>
+      );
     case 'dashboard':
       return (
         <ProtectedRoute currentRoute={currentRoute} navigate={navigate}>

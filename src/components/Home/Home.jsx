@@ -171,10 +171,10 @@ const Homepage = ({ navigate }) => {
               </p>
               <div className="mt-8 flex flex-col sm:flex-row gap-4">
                 <button
-                  onClick={() => navigate(user ? 'dashboard' : 'signup')}
+                  onClick={() => navigate(user ? 'panel' : 'signup')}
                   className="bg-indigo-600 text-white px-8 py-4 rounded-lg font-semibold hover:bg-indigo-700 transition-colors flex items-center justify-center space-x-2"
                 >
-                  <span>{user ? 'Go to Dashboard' : 'Start Free Trial'}</span>
+                  <span>{user ? 'Go to Panel' : 'Start Free Trial'}</span>
                   <ArrowRight className="h-5 w-5" />
                 </button>
                 {user && (
