@@ -17,8 +17,11 @@ const Panel = ({ navigate }) => {
         await loadOrganizations();
         if (user?.id || user?.teacherId) {
           const teacherId = user.teacherId || user.id;
-          const t = await TeacherService.getTeacherById(teacherId);
-          setTeacher(t);
+          const orgId = currentOrganization?.id || currentOrganization?.organisationId || organizations?.[0]?.id || organizations?.[0]?.organisationId;
+          if (orgId) {
+            const t = await TeacherService.getTeacherById(orgId, teacherId);
+            setTeacher(t);
+          }
         }
       } catch (e) {
         setError(e.message || 'Failed to load panel');

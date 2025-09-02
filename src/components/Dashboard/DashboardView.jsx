@@ -7,7 +7,7 @@ import QuickActions from './QuickActions';
 import { motion } from 'framer-motion';
 import TeacherManagement from './TeacherManagement';
 import TeacherService from '../../services/teacherService';
-import OrganizationService from '../../services/organizationService.js';
+import OrganizationService from '../../services/organizationService';
 import { useOrganization } from '../../contexts/OrganizationContext';
 
 const DashboardView = ({
@@ -60,7 +60,8 @@ const DashboardView = ({
   const loadTeachers = async () => {
     try {
       setLoading(true);
-      const teachersData = await TeacherService.getAllTeachers();
+      const orgId = currentOrganization.id || currentOrganization.organisationId;
+      const teachersData = await TeacherService.getAllTeachers(orgId);
       setLocalTeachers(teachersData);
     } catch (error) {
       console.warn('Could not load teachers:', error.message);
@@ -78,9 +79,9 @@ const DashboardView = ({
 
     try {
       setLoading(true);
-      const orgId = currentOrganization.id;
+      const orgId = currentOrganization.id || currentOrganization.organisationId;
       const classroomsData = await OrganizationService.getClassrooms(orgId);
-      setLocalClassrooms(classroomsData.classrooms || []); // Adjust based on actual response structure
+      setLocalClassrooms(classroomsData.classrooms || []);
     } catch (error) {
       console.warn('Could not load classrooms:', error.message);
       setError(`Failed to load classrooms: ${error.message}`);
@@ -93,7 +94,8 @@ const DashboardView = ({
   // Validate teacher IDs before submitting
   const validateTeachers = async (teacherIds) => {
     try {
-      await OrganizationService.validateTeachersExist(teacherIds);
+      const orgId = currentOrganization.id || currentOrganization.organisationId;
+      await OrganizationService.validateTeachersExist(orgId, teacherIds);
       return true;
     } catch (error) {
       setError(`Teacher validation failed: ${error.message}`);
@@ -127,7 +129,7 @@ const DashboardView = ({
       // Create the classroom
       const result = await OrganizationService.createClassroom({
         ...classroomData,
-        organisationId: currentOrganization.id
+        organisationId: currentOrganization.id || currentOrganization.organisationId
       });
 
       // Update local state with the new classroom

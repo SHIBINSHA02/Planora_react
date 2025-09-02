@@ -3,9 +3,11 @@ import React, { useState, useEffect } from 'react';
 import { Edit, Trash2, AlertCircle } from 'lucide-react';
 import TeacherForm from './TeacherForm';
 import TeacherService from '../../services/teacherService';
+import { useOrganization } from '../../contexts/OrganizationContext';
 
 const TeacherManagement = () => {
   const [teachers, setTeachers] = useState([]);
+  const { currentOrganization } = useOrganization();
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -27,8 +29,10 @@ const TeacherManagement = () => {
 
   // Load teachers on component mount
   useEffect(() => {
-    loadTeachers();
-  }, []);
+    if (currentOrganization) {
+      loadTeachers();
+    }
+  }, [currentOrganization]);
 
   // Load all teachers from the API
   const loadTeachers = async () => {
@@ -39,7 +43,7 @@ const TeacherManagement = () => {
       // If you don't have a GET all route yet, you can start with an empty array
       // and populate teachers as you add them
       try {
-        const teachersData = await TeacherService.getAllTeachers();
+        const teachersData = await TeacherService.getAllTeachers(currentOrganization.id || currentOrganization.organisationId);
         setTeachers(teachersData);
       } catch (fetchError) {
         // If GET all route doesn't exist yet, start with empty array
@@ -64,7 +68,7 @@ const TeacherManagement = () => {
   const handleAddTeacher = async (newTeacher) => {
     try {
       setError(null);
-      const createdTeacher = await TeacherService.createTeacher(newTeacher);
+      const createdTeacher = await TeacherService.createTeacher(currentOrganization.id || currentOrganization.organisationId, newTeacher);
       setTeachers(prev => [...prev, createdTeacher]);
       showSuccessMessage('Teacher added successfully!');
       return true;
@@ -78,7 +82,7 @@ const TeacherManagement = () => {
   const handleUpdateTeacher = async (updatedTeacher) => {
     try {
       setError(null);
-      const updated = await TeacherService.updateTeacher(updatedTeacher.id, updatedTeacher);
+      const updated = await TeacherService.updateTeacher(currentOrganization.id || currentOrganization.organisationId, updatedTeacher.id, updatedTeacher);
       setTeachers(prev => 
         prev.map(teacher => 
           teacher.id === updatedTeacher.id ? updated : teacher
@@ -101,7 +105,7 @@ const TeacherManagement = () => {
 
     try {
       setError(null);
-      await TeacherService.deleteTeacher(teacherId);
+      await TeacherService.deleteTeacher(currentOrganization.id || currentOrganization.organisationId, teacherId);
       setTeachers(prev => prev.filter(teacher => teacher.id !== teacherId));
       
       // If we were editing this teacher, cancel the edit

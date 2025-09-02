@@ -7,7 +7,7 @@ import CreateOrganizationForm from './CreateOrganizationForm';
 import OrganizationList from './OrganizationList';
 import OrganizationDetails from './OrganizationDetails';
 import ProjectAccess from './ProjectAccess';
-import OTPManagement from './OTPManagement';
+// Removed OTPManagement per backend cleanup
 
 const OrganizationManagement = ({ navigate }) => {
   const { organizations, loadOrganizations, loading, error } = useOrganization();
@@ -100,7 +100,6 @@ const OrganizationManagement = ({ navigate }) => {
               {[
                 { id: 'create', label: 'Create Organization', icon: 'Plus' },
                 { id: 'manage', label: 'Manage Organizations', icon: 'Settings' },
-                { id: 'otp', label: 'OTP Management', icon: 'Shield' },
                 { id: 'access', label: 'Project Access', icon: 'Key' }
               ].map(tab => (
                 <button
@@ -141,9 +140,7 @@ const OrganizationManagement = ({ navigate }) => {
           </>
         )}
 
-        {currentView === 'otp' && (
-          <OTPManagement variants={itemVariants} />
-        )}
+        {/* OTP management removed */}
 
         {currentView === 'access' && (
           <ProjectAccess variants={itemVariants} />

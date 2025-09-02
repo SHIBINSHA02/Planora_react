@@ -1,6 +1,6 @@
 // src/contexts/OrganizationContext.jsx
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import OrganizationService from '../services/organizationService.js.js';
+import OrganizationService from '../services/organizationService';
 
 const OrganizationContext = createContext();
 

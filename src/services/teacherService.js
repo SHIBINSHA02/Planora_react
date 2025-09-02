@@ -1,12 +1,12 @@
 // src/services/teacherService.js
 
-// const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
-const API_BASE_URL =  'http://localhost:3000/api';
+// Base API now aligned to Express app
+const API_BASE_URL =  'http://localhost:3000/api/organisation';
 class TeacherService {
   // Get all teachers (you'll need to add GET / route to your backend)
-  static async getAllTeachers() {
+  static async getAllTeachers(organisationId) {
     try {
-      const response = await fetch(`${API_BASE_URL}/teachers`);
+      const response = await fetch(`${API_BASE_URL}/${organisationId}/teachers`);
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
@@ -18,9 +18,9 @@ class TeacherService {
   }
 
   // Get teacher by ID (uses your existing GET /:id route)
-  static async getTeacherById(id) {
+  static async getTeacherById(organisationId, id) {
     try {
-      const response = await fetch(`${API_BASE_URL}/teachers/${id}`);
+      const response = await fetch(`${API_BASE_URL}/${organisationId}/teachers/${id}`);
       if (!response.ok) {
         if (response.status === 404) {
           throw new Error('Teacher not found');
@@ -35,9 +35,9 @@ class TeacherService {
   }
 
   // Create a new teacher (uses your existing POST / route)
-  static async createTeacher(teacherData) {
+  static async createTeacher(organisationId, teacherData) {
     try {
-      const response = await fetch(`${API_BASE_URL}/teachers`, {
+      const response = await fetch(`${API_BASE_URL}/${organisationId}/teachers`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -58,12 +58,12 @@ class TeacherService {
   }
 
   // Update teacher by ID (uses your existing PUT /:id route)
-  static async updateTeacher(id, teacherData) {
+  static async updateTeacher(organisationId, id, teacherData) {
     try {
       // Remove id from the data since it's in the URL
       const { id: _, ...updateData } = teacherData;
       
-      const response = await fetch(`${API_BASE_URL}/teachers/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/${organisationId}/teachers/${id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -87,9 +87,9 @@ class TeacherService {
   }
 
   // Delete teacher by ID (uses your existing DELETE /:id route)
-  static async deleteTeacher(id) {
+  static async deleteTeacher(organisationId, id) {
     try {
-      const response = await fetch(`${API_BASE_URL}/teachers/${id}`, {
+      const response = await fetch(`${API_BASE_URL}/${organisationId}/teachers/${id}`, {
         method: 'DELETE',
       });
 

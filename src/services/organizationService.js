@@ -1,5 +1,6 @@
-// src/services/organizationService.js.js
+// src/services/organizationService.js
 import axios from 'axios';
+import TeacherService from './teacherService';
 
 const API_BASE_URL = 'http://localhost:3000/api/organisation';
 
@@ -133,29 +134,16 @@ class OrganizationService {
     }
   }
 
-  // Get all classrooms for an organization
+  // Get all classrooms for an organization (not provided in backend; return empty list)
   static async getClassrooms(organizationId) {
     try {
       if (this.isEmpty(organizationId)) {
         throw new Error('Organization ID is required');
       }
-
-      const response = await axios.get(`${API_BASE_URL}/${organizationId}/classrooms`, {
-        timeout: 5000
-      });
-      return response.data;
+      return { classrooms: [] };
     } catch (error) {
-      console.error('Error fetching classrooms:', error);
-      
-      if (error.response) {
-        if (error.response.status === 404) {
-          throw new Error('Organization not found');
-        }
-        const errorMessage = error.response.data?.message || `HTTP error! status: ${error.response.status}`;
-        throw new Error(errorMessage);
-      } else {
-        throw new Error(`Request error: ${error.message}`);
-      }
+      console.error('Error fetching classrooms (not supported):', error);
+      return { classrooms: [] };
     }
   }
 
@@ -398,9 +386,9 @@ class OrganizationService {
   }
 
   // Validate teachers exist by checking against the teachers API
-  static async validateTeachersExist(teacherIds) {
+  static async validateTeachersExist(organisationId, teacherIds) {
     try {
-      const validTeachers = await this.getValidTeachers();
+      const validTeachers = await TeacherService.getAllTeachers(organisationId);
       const validTeacherIds = validTeachers.map(teacher => String(teacher.id)); // Your backend uses 'id' field
       
       const idsToCheck = Array.isArray(teacherIds) ? teacherIds : [teacherIds];
@@ -419,150 +407,15 @@ class OrganizationService {
       return true;
     }
   }
-
-  // Fetch valid teachers to validate assignedTeacher and assignedTeachers
-  static async getValidTeachers() {
-    try {
-      const response = await axios.get('http://localhost:3000/api/teachers', {
-        timeout: 5000
-      });
-      return response.data || []; // Expecting an array of teacher objects with 'id' field
-    } catch (error) {
-      console.error('Error fetching teachers:', error);
-      throw new Error('Failed to fetch valid teachers. Please check if the teachers API is available.');
-    }
-  }
-
-  // Get a specific teacher by ID
-  static async getTeacher(teacherId) {
-    try {
-      if (this.isEmpty(teacherId)) {
-        throw new Error('Teacher ID is required');
-      }
-
-      const response = await axios.get(`http://localhost:3000/api/teachers/${teacherId}`, {
-        timeout: 5000
-      });
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching teacher:', error);
-      if (error.response && error.response.status === 404) {
-        throw new Error('Teacher not found');
-      }
-      throw new Error('Failed to fetch teacher details');
-    }
-  }
-
-  // Create a new teacher
-  static async createTeacher(teacherData) {
-    try {
-      const { id, name, subjects, classes } = teacherData;
-      
-      if (this.isEmpty(id) || this.isEmpty(name)) {
-        throw new Error('Teacher ID and name are required');
-      }
-
-      const response = await axios.post('http://localhost:3000/api/teachers', {
-        id: String(id), // Ensure ID is string
-        name,
-        subjects: subjects || [],
-        classes: classes || []
-      }, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 5000
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error('Error creating teacher:', error);
-      if (error.response) {
-        throw new Error(error.response.data?.message || 'Failed to create teacher');
-      }
-      throw new Error('Failed to create teacher');
-    }
-  }
-
-  // Update a teacher
-  static async updateTeacher(teacherId, updateData) {
-    try {
-      if (this.isEmpty(teacherId)) {
-        throw new Error('Teacher ID is required');
-      }
-
-      const response = await axios.put(`http://localhost:3000/api/teachers/${teacherId}`, updateData, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        timeout: 5000
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error('Error updating teacher:', error);
-      if (error.response) {
-        if (error.response.status === 404) {
-          throw new Error('Teacher not found');
-        }
-        throw new Error(error.response.data?.message || 'Failed to update teacher');
-      }
-      throw new Error('Failed to update teacher');
-    }
-  }
-
-  // Delete a teacher
-  static async deleteTeacher(teacherId) {
-    try {
-      if (this.isEmpty(teacherId)) {
-        throw new Error('Teacher ID is required');
-      }
-
-      const response = await axios.delete(`http://localhost:3000/api/teachers/${teacherId}`, {
-        timeout: 5000
-      });
-
-      return response.data;
-    } catch (error) {
-      console.error('Error deleting teacher:', error);
-      if (error.response) {
-        if (error.response.status === 404) {
-          throw new Error('Teacher not found');
-        }
-        throw new Error(error.response.data?.message || 'Failed to delete teacher');
-      }
-      throw new Error('Failed to delete teacher');
-    }
-  }
-
-  // Helper method to get teacher names from IDs
-  static async getTeacherNames(teacherIds) {
-    try {
-      const teachers = await this.getValidTeachers();
-      const idsToFind = Array.isArray(teacherIds) ? teacherIds : [teacherIds];
-      const normalizedIds = idsToFind.map(id => String(id));
-      
-      const teacherNames = {};
-      teachers.forEach(teacher => {
-        if (normalizedIds.includes(String(teacher.id))) {
-          teacherNames[teacher.id] = teacher.name;
-        }
-      });
-
-      return teacherNames;
-    } catch (error) {
-      console.error('Error getting teacher names:', error);
-      return {};
-    }
-  }
-
   // Enhanced method to format classroom data with teacher names
-  static async formatClassroomWithTeacherNames(classroom) {
+  static async formatClassroomWithTeacherNames(organisationId, classroom) {
     if (!classroom) return null;
 
     try {
-      const allTeacherIds = [classroom.assignedTeacher, ...classroom.assignedTeachers];
-      const teacherNames = await this.getTeacherNames(allTeacherIds);
+      const allTeacherIds = [classroom.assignedTeacher, ...(classroom.assignedTeachers || [])];
+      const teachers = await TeacherService.getAllTeachers(organisationId);
+      const teacherNames = {};
+      teachers.forEach(t => { teacherNames[String(t.id)] = t.name; });
 
       return {
         ...classroom,
