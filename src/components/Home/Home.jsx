@@ -74,12 +74,7 @@ const Homepage = ({ navigate }) => {
               {user ? (
                 <div className="flex items-center space-x-3">
                   <span className="text-sm text-gray-700">Welcome, {user.name}</span>
-                  <button
-                    onClick={() => navigate('dashboard')}
-                    className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
-                  >
-                    Dashboard
-                  </button>
+                  
                   <button
                     onClick={logout}
                     className="text-gray-500 hover:text-red-600 transition-colors"

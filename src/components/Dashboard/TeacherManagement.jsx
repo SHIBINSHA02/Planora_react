@@ -15,16 +15,7 @@ const TeacherManagement = () => {
 
   // Available subjects - you can move this to a config file or fetch from API
   const subjects = [
-    'Mathematics',
-    'Physics',
-    'Chemistry',
-    'Biology',
-    'English',
-    'History',
-    'Geography',
-    'Computer Science',
-    'Economics',
-    'Political Science'
+    
   ];
 
   // Load teachers on component mount
