@@ -36,7 +36,8 @@ const DashboardView = ({
 
   // Load teachers and classrooms on component mount
   useEffect(() => {
-    if (currentOrganization) {
+    const orgId = currentOrganization?.id || currentOrganization?.organisationId;
+    if (orgId) {
       loadTeachers();
       loadClassrooms();
     }
@@ -59,7 +60,11 @@ const DashboardView = ({
   const loadTeachers = async () => {
     try {
       setLoading(true);
-      const orgId = currentOrganization.id || currentOrganization.organisationId;
+      const orgId = (currentOrganization && (currentOrganization.id || currentOrganization.organisationId)) || null;
+      if (!orgId) {
+        setLoading(false);
+        return;
+      }
       const teachersData = await TeacherService.getAllTeachers(orgId);
       setLocalTeachers(teachersData);
     } catch (error) {
@@ -78,7 +83,11 @@ const DashboardView = ({
 
     try {
       setLoading(true);
-      const orgId = currentOrganization.id || currentOrganization.organisationId;
+      const orgId = (currentOrganization && (currentOrganization.id || currentOrganization.organisationId)) || null;
+      if (!orgId) {
+        setLoading(false);
+        return;
+      }
       const classroomsData = await OrganizationService.getClassrooms(orgId);
       setLocalClassrooms(classroomsData.classrooms || []);
     } catch (error) {

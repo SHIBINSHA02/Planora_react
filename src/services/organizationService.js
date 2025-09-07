@@ -433,10 +433,21 @@ class OrganizationService {
   // Get all organizations for a user
   static async getOrganizations() {
     try {
-      const response = await axios.get(`${API_BASE_URL}/list`, {
-        timeout: 3000 // Reduced timeout for faster fallback
-      });
-      return response.data;
+      if (this._orgListCache) return this._orgListCache;
+      if (this._orgListInflight) return await this._orgListInflight;
+
+      this._orgListInflight = axios.get(`${API_BASE_URL}/list`, { timeout: 8000 })
+        .then((response) => {
+          this._orgListCache = response.data;
+          this._orgListInflight = null;
+          return this._orgListCache;
+        })
+        .catch((error) => {
+          this._orgListInflight = null;
+          throw error;
+        });
+
+      return await this._orgListInflight;
     } catch (error) {
       if (error.response) {
         throw new Error(error.response.data?.message || `HTTP error! status: ${error.response.status}`);

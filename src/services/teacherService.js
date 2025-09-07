@@ -106,6 +106,23 @@ class TeacherService {
       throw error;
     }
   }
+
+  // Get a teacher's computed schedule within an organisation
+  static async getTeacherSchedule(organisationId, id) {
+    try {
+      const response = await fetch(`${API_BASE_URL}/${organisationId}/teachers/${id}/schedule`);
+      if (!response.ok) {
+        if (response.status === 404) {
+          throw new Error('Schedule not found');
+        }
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (error) {
+      console.error('Error fetching teacher schedule:', error);
+      throw error;
+    }
+  }
 }
 
 export default TeacherService;

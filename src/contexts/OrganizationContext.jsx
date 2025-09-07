@@ -25,6 +25,8 @@ export const OrganizationProvider = ({ children }) => {
     if (savedOrgId) {
       loadOrganization(savedOrgId);
     }
+    // Also load organizations list once on mount
+    loadOrganizations();
   }, []); // Empty dependency array to run only once
 
   const loadOrganization = async (organizationId) => {
@@ -97,7 +99,7 @@ export const OrganizationProvider = ({ children }) => {
       
     } catch (error) {
       console.error('Error loading organizations:', error);
-      setError('Failed to load organizations.');
+      setError(error?.message?.includes('timeout') ? 'Organizations request timed out. Please try again.' : 'Failed to load organizations.');
     } finally {
       setLoading(false);
       setIsLoadingOrganizations(false);

@@ -1,22 +1,42 @@
 // src/components/ClassroomScheduleView.jsx
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import PropTypes from 'prop-types';
 import ScheduleTable from './ScheduleTable';
+import { useOrganization } from '../contexts/OrganizationContext';
+import TeacherService from '../services/teacherService';
 
 const ClassroomScheduleView = ({
   classrooms,
-  teachers,
   classSchedules,
   selectedClassroom,
   setSelectedClassroom,
   updateSchedule,
   getAvailableTeachers,
-  getTeachersForSubject,
   getSubjectsForClass,
   isTeacherAvailable
 }) => {
   const days = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
   const periods = ['Period 1', 'Period 2', 'Period 3', 'Period 4', 'Period 5', 'Period 6'];
+
+  const { currentOrganization } = useOrganization();
+  const [orgTeachers, setOrgTeachers] = useState([]);
+
+  useEffect(() => {
+    const load = async () => {
+      if (!currentOrganization) {
+        setOrgTeachers([]);
+        return;
+      }
+      try {
+        const orgId = currentOrganization.id || currentOrganization.organisationId;
+        const list = await TeacherService.getAllTeachers(orgId);
+        setOrgTeachers(Array.isArray(list) ? list : []);
+      } catch (_) {
+        setOrgTeachers([]);
+      }
+    };
+    load();
+  }, [currentOrganization]);
 
   const getCurrentClassroom = () => {
     if (!selectedClassroom) return null;
@@ -31,25 +51,25 @@ const ClassroomScheduleView = ({
 
   const getTeachersForTimeSlot = (dayIndex, periodIndex, selectedSubject = null) => {
     if (!selectedClassroom) return [];
-    
-    return getAvailableTeachers(
+    // Prefer organisation teachers list when filtering
+    const available = getAvailableTeachers(
       parseInt(selectedClassroom), 
       dayIndex, 
       periodIndex, 
       selectedSubject
     );
+    return available.filter(t => orgTeachers.some(ot => ot.id === t.id));
   };
   const getTeachersForCurrentClassSubject = (subject) => {
     const classroom = getCurrentClassroom();
     if (!classroom) return [];
-    
-    return getTeachersForSubject(classroom.grade, subject);
+    return orgTeachers.filter(t => Array.isArray(t.subjects) && t.subjects.includes(subject) && Array.isArray(t.classes) && t.classes.includes(classroom.grade));
   };
   const validateTeacherAssignment = (dayIndex, periodIndex, teacherId, subject) => {
     if (!selectedClassroom || !teacherId) return true;
     
     const classroom = getCurrentClassroom();
-    const teacher = teachers.find(t => t.id === parseInt(teacherId));
+    const teacher = orgTeachers.find(t => t.id === parseInt(teacherId));
     
     if (!teacher || !classroom) return false;
     
@@ -194,7 +214,7 @@ const ClassroomScheduleView = ({
                 Available Teachers
               </h3>
               <div className="text-xs text-gray-600">
-                {teachers.filter(t => t.classes.includes(currentClassroom?.grade)).length} teachers 
+                {orgTeachers.filter(t => t.classes && t.classes.includes(currentClassroom?.grade)).length} teachers 
                 can teach this class
               </div>
               {stats && Object.keys(stats.teacherCount).length > 0 && (
@@ -219,7 +239,7 @@ const ClassroomScheduleView = ({
             scheduleData={classSchedules[selectedClassroom]}
             days={days}
             periods={periods}
-            teachers={teachers}
+            teachers={orgTeachers}
             subjects={availableSubjects} // Pass class-specific subjects
             onUpdateSchedule={handleUpdateSchedule}
             getTeachersForTimeSlot={getTeachersForTimeSlot}
@@ -295,13 +315,11 @@ const ClassroomScheduleView = ({
 
 ClassroomScheduleView.propTypes = {
   classrooms: PropTypes.array.isRequired,
-  teachers: PropTypes.array.isRequired,
   classSchedules: PropTypes.object.isRequired,
   selectedClassroom: PropTypes.string.isRequired,
   setSelectedClassroom: PropTypes.func.isRequired,
   updateSchedule: PropTypes.func.isRequired,
   getAvailableTeachers: PropTypes.func.isRequired,
-  getTeachersForSubject: PropTypes.func.isRequired,
   getSubjectsForClass: PropTypes.func.isRequired,
   isTeacherAvailable: PropTypes.func.isRequired,
 };

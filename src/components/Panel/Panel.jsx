@@ -9,6 +9,7 @@ const Panel = ({ navigate }) => {
   const { user } = useAuth();
   const { organizations, currentOrganization, loadOrganizations, switchOrganization } = useOrganization();
   const [teacher, setTeacher] = useState(null);
+  const [orgIdForRequests, setOrgIdForRequests] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [orgsForUser, setOrgsForUser] = useState([]);
@@ -28,12 +29,19 @@ const Panel = ({ navigate }) => {
           } catch {}
         }
 
-        // If current organization and teacherId known, fetch teacher
-        if ((user?.id || user?.teacherId) && (currentOrganization?.id || currentOrganization?.organisationId)) {
+        // Initialize orgIdForRequests from current organization
+        if (currentOrganization?.id || currentOrganization?.organisationId) {
+          setOrgIdForRequests(currentOrganization.id || currentOrganization.organisationId);
+        }
+
+        // If org and teacherId known, fetch teacher
+        if (user?.id || user?.teacherId) {
           const teacherId = user.teacherId || user.id;
-          const orgId = currentOrganization.id || currentOrganization.organisationId;
-          const t = await TeacherService.getTeacherById(orgId, teacherId);
-          setTeacher(t);
+          const orgId = (currentOrganization?.id || currentOrganization?.organisationId || orgIdForRequests || '').trim();
+          if (orgId) {
+            const t = await TeacherService.getTeacherById(orgId, teacherId);
+            setTeacher(t);
+          }
         }
       } catch (e) {
         setError(e.message || 'Failed to load panel');
@@ -45,6 +53,7 @@ const Panel = ({ navigate }) => {
   }, [user, loadOrganizations, currentOrganization]);
 
   const handleSelectOrganization = (organisationId) => {
+    setOrgIdForRequests(organisationId || '');
     switchOrganization(organisationId);
     navigate('dashboard');
   };
@@ -196,7 +205,7 @@ const Panel = ({ navigate }) => {
               type="text"
               placeholder="Organisation ID (e.g., org-1)"
               value={scheduleSearch.organisationId}
-              onChange={(e) => setScheduleSearch(s => ({ ...s, organisationId: e.target.value }))}
+              onChange={(e) => { const v = e.target.value; setScheduleSearch(s => ({ ...s, organisationId: v })); setOrgIdForRequests(v || ''); }}
               className="px-3 py-2 border rounded-md"
             />
             <input
