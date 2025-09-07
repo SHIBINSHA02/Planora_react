@@ -1,4 +1,3 @@
-// src/components/Panel/Panel.jsx
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../Auth/Auth';
 import { useOrganization } from '../../contexts/OrganizationContext';
@@ -80,7 +79,7 @@ const Panel = ({ navigate }) => {
       const { organisationId, classroomId } = scheduleSearch;
       if (!organisationId || !classroomId) throw new Error('Enter both organisationId and classroomId');
       const cls = await OrganizationService.getClassroom(organisationId, classroomId);
-      setFoundClassroom(cls);
+      setFoundClassroom(cls && cls.classroom ? cls.classroom : cls);
     } catch (e) {
       setError(e.message || 'Failed to fetch classroom');
     }
@@ -217,17 +216,49 @@ const Panel = ({ navigate }) => {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cell #</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Teachers</th>
-                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Subjects</th>
+                      <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Day/Period</th>
+                      {[...Array(6)].map((_, idx) => (
+                        <th key={idx} className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">P{idx+1}</th>
+                      ))}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
-                    {(foundClassroom.grid || []).map((cell, idx) => (
-                      <tr key={idx}>
-                        <td className="px-4 py-2 text-sm text-gray-700">{idx + 1}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{Array.isArray(cell.teachers) ? cell.teachers.length : 0}</td>
-                        <td className="px-4 py-2 text-sm text-gray-700">{Array.isArray(cell.subjects) ? cell.subjects.join(', ') : ''}</td>
+                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day, rowIdx) => (
+                      <tr key={day}>
+                        <td className="px-4 py-2 text-sm font-medium text-gray-900">{day}</td>
+                        {[...Array(6)].map((_, colIdx) => {
+                          const cellIdx = rowIdx * 6 + colIdx;
+                          const cell = foundClassroom.grid && foundClassroom.grid[cellIdx];
+                          return (
+                            <td key={colIdx} className="px-4 py-2 text-sm text-gray-700">
+                              {cell ? (
+                                <>
+                                  <div>{Array.isArray(cell.subjects) ? cell.subjects.join(', ') : '-'}</div>
+                                  <div className="text-xs text-gray-500">
+                                    {Array.isArray(cell.teachers)
+                                      ? cell.teachers
+                                          .map((t) => (t && typeof t === 'object' ? (t.name || t.email || t.id) : String(t)))
+                                          .join(', ')
+                                      : '-'}
+                                  </div>
+                                  {/* <div className="text-[10px] text-gray-400">
+                                    {Array.isArray(cell.teachers)
+                                      ? (() => {
+                                          const classNames = cell.teachers.flatMap((t) => {
+                                            const org = t && Array.isArray(t.organizations)
+                                              ? t.organizations.find((o) => o && o.organisationId === scheduleSearch.organisationId)
+                                              : null;
+                                            return org && Array.isArray(org.classes) ? org.classes : [];
+                                          });
+                                          return classNames.length > 0 ? classNames.join(', ') : '-';
+                                        })()
+                                      : '-'}
+                                  </div> */}
+                                </>
+                              ) : '-'}
+                            </td>
+                          );
+                        })}
                       </tr>
                     ))}
                   </tbody>
@@ -242,5 +273,3 @@ const Panel = ({ navigate }) => {
 };
 
 export default Panel;
-
-

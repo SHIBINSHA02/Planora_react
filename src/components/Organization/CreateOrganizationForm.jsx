@@ -31,9 +31,7 @@ const CreateOrganizationForm = ({ navigate, variants }) => {
     if (newOrganization.scheduleRows < 1 || newOrganization.scheduleRows > 20) {
       newErrors.scheduleRows = 'Schedule rows must be between 1 and 20';
     }
-    if (newOrganization.scheduleColumns < 1 || newOrganization.scheduleColumns > 20) {
-      newErrors.scheduleColumns = 'Schedule columns must be between 1 and 20';
-    }
+   
     
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
@@ -55,10 +53,9 @@ const CreateOrganizationForm = ({ navigate, variants }) => {
       setNewOrganization({
         name: '',
         admin: '',
-        periodCount: 8,
+        periodCount: 6,
         totalDays: 5,
-        scheduleRows: 7,
-        scheduleColumns: 8
+        
       });
       navigate('dashboard');
     } catch (error) {
@@ -142,39 +139,6 @@ const CreateOrganizationForm = ({ navigate, variants }) => {
           {errors.totalDays && <p className="text-red-500 text-xs mt-1">{errors.totalDays}</p>}
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Schedule Rows
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="20"
-            value={newOrganization.scheduleRows}
-            onChange={(e) => handleInputChange('scheduleRows', parseInt(e.target.value) || 1)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-              errors.scheduleRows ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {errors.scheduleRows && <p className="text-red-500 text-xs mt-1">{errors.scheduleRows}</p>}
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Schedule Columns
-          </label>
-          <input
-            type="number"
-            min="1"
-            max="20"
-            value={newOrganization.scheduleColumns}
-            onChange={(e) => handleInputChange('scheduleColumns', parseInt(e.target.value) || 1)}
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 ${
-              errors.scheduleColumns ? 'border-red-500' : 'border-gray-300'
-            }`}
-          />
-          {errors.scheduleColumns && <p className="text-red-500 text-xs mt-1">{errors.scheduleColumns}</p>}
-        </div>
       </div>
 
       <div className="mt-6">
