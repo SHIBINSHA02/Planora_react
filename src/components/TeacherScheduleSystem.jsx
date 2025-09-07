@@ -6,30 +6,38 @@ import DashboardView from './Dashboard/DashboardView';
 import ClassroomScheduleView from './ClassroomScheduleView';
 import TeacherTimetableView from './TeacherTimetableView';
 import ErrorBoundary from './ErrorBoundary';
-import { useScheduleData } from './hooks/useScheduleData';
+// import { useScheduleData } from './hooks/useScheduleData';
+import { useOrganization } from '../contexts/OrganizationContext';
+import TeacherService from '../services/teacherService';
+import OrganizationService from '../services/organizationService';
 
 const TeacherScheduleSystem = ({ navigate }) => {
   const [currentView, setCurrentView] = useState('dashboard');
   const [selectedTeacher, setSelectedTeacher] = useState('');
   const [selectedClassroom, setSelectedClassroom] = useState('');
 
-  const {
-    teachers,
-    classrooms,
-    classSubjects,
-   classSchedules,
-    addTeacher,
-    addClassroom,
-    updateSchedule,
-    clearAllSchedules,
-    getTeacherTimetable,
-    getAvailableTeachers,
-    getSubjectsForClass, 
-    getTeachersForSubject, // Add this
-    isTeacherAvailable,
-    autoAssignTeachers,
-    exportData
-  } = useScheduleData();
+  const { currentOrganization } = useOrganization();
+  const [teachers, setTeachers] = useState([]);
+  const [classrooms, setClassrooms] = useState([]);
+  const [classSubjects, setClassSubjects] = useState({});
+  const [classSchedules, setClassSchedules] = useState({});
+
+  // Load org-scoped teachers and classrooms
+  useEffect(() => {
+    const load = async () => {
+      const orgId = currentOrganization?.id || currentOrganization?.organisationId;
+      if (!orgId) { setTeachers([]); setClassrooms([]); return; }
+      try {
+        const t = await TeacherService.getAllTeachers(orgId);
+        setTeachers(Array.isArray(t) ? t : []);
+      } catch { setTeachers([]); }
+      try {
+        const c = await OrganizationService.getClassrooms(orgId);
+        setClassrooms(c.classrooms || []);
+      } catch { setClassrooms([]); }
+    };
+    load();
+  }, [currentOrganization]);
 
   // Convert classSubjects object to an array of unique subjects
   const subjects = Array.from(
@@ -51,12 +59,12 @@ const TeacherScheduleSystem = ({ navigate }) => {
             <DashboardView
               teachers={teachers}
               classrooms={classrooms}
-              subjects={subjects}
-              addTeacher={addTeacher}
-              addClassroom={addClassroom}
-              autoAssignTeachers={autoAssignTeachers}
-              clearAllSchedules={clearAllSchedules}
-              exportData={exportData}
+              subjects={[]}
+              addTeacher={() => {}}
+              addClassroom={() => {}}
+              autoAssignTeachers={() => {}}
+              clearAllSchedules={() => {}}
+              exportData={() => {}}
               navigate={navigate}
             />
           </ErrorBoundary>

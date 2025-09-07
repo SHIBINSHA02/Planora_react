@@ -29,7 +29,8 @@ const TeacherManagement = () => {
 
   // Load teachers on component mount
   useEffect(() => {
-    if (currentOrganization) {
+    const orgId = currentOrganization?.id || currentOrganization?.organisationId;
+    if (orgId) {
       loadTeachers();
     }
   }, [currentOrganization]);
@@ -43,7 +44,9 @@ const TeacherManagement = () => {
       // If you don't have a GET all route yet, you can start with an empty array
       // and populate teachers as you add them
       try {
-        const teachersData = await TeacherService.getAllTeachers(currentOrganization.id || currentOrganization.organisationId);
+        const orgId = currentOrganization?.id || currentOrganization?.organisationId;
+        if (!orgId) { setTeachers([]); return; }
+        const teachersData = await TeacherService.getAllTeachers(orgId);
         setTeachers(teachersData);
       } catch (fetchError) {
         // If GET all route doesn't exist yet, start with empty array
